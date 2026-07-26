@@ -1,1433 +1,636 @@
-
-
-```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🍔 Burger Tycoon</title>
-<style>
-/* ===== RESET & GENEL STILLER ===== */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: #fff;
-  min-height: 100vh;
-  overflow-x: hidden;
-  user-select: none;
-}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Burger Tycoon 🍔</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #2d3436;
+      color: #2d3436;
+      overflow: hidden;
+      height: 100vh;
+    }
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #e17055;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+      z-index: 10;
+    }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+    .statbar { display: flex; gap: 16px; font-weight: 600; font-size: 15px; }
+    .statbar span { opacity: .95; }
+    main.panels {
+      display: grid;
+      grid-template-columns: 280px 1fr 300px;
+      flex: 1;
+      gap: 0;
+      overflow: hidden;
+    }
+    .panel { overflow-y: auto; padding: 16px; }
+    .panel.left { background: #ffeaa7; border-right: 4px solid #fdcb6e; }
+    .panel.center { background: #f5f6fa; display: flex; flex-direction: column; align-items: center; }
+    .panel.right { background: #81ecec; border-left: 4px solid #00cec9; }
 
-/* ===== ÜST DURUM ÇUBUĞU ===== */
-.top-bar {
-  background: linear-gradient(90deg, #e94560, #ff6b6b);
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  box-shadow: 0 4px 15px rgba(233,69,96,0.4);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.top-bar .stat {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  font-weight: 700;
-  background: rgba(0,0,0,0.2);
-  padding: 6px 12px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-.top-bar .stat .value { color: #ffd700; }
-.top-bar .game-title {
-  font-size: 18px;
-  font-weight: 900;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-}
+    h2 { font-size: 18px; margin-bottom: 12px; color: #2d3436; border-bottom: 2px solid rgba(0,0,0,.1); padding-bottom: 6px; }
 
-/* ===== ANA LAYOUT ===== */
-.game-container {
-  display: grid;
-  grid-template-columns: 250px 1fr 280px;
-  gap: 15px;
-  padding: 15px;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: calc(100vh - 60px);
-}
+    /* Customers */
+    #customer-list { display: flex; flex-direction: column; gap: 12px; }
+    .customer {
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      position: relative;
+      border-left: 5px solid #00b894;
+ transition: transform .2s;
+    }
+    .customer-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .customer-avatar { font-size: 28px; }
+    .customer-name { font-weight: 700; font-size: 14px; flex: 1; }
+    .customer-want { font-size: 12px; color: #636e72; margin-bottom: 6px; }
+    .customer-want .em { font-size: 18px; margin-right: 2px; }
+    .patience-track {
+      width: 100%; height: 8px; background: #dfe6e9; border-radius: 4px; overflow: hidden;
+    }
+    .patience-fill { height: 100%; border-radius: 4px; transition: width .1s linear, background .3s; }
+    .customer.leaving { opacity: .5; transform: translateX(-20px); border-left-color: #d63031; }
 
-/* ===== PANEL STİLLERİ ===== */
-.panel {
-  background: rgba(255,255,255,0.05);
-  border-radius: 16px;
-  padding: 15px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-}
-.panel-title {
-  font-size: 16px;
-  font-weight: 800;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid rgba(255,255,255,0.1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+    /* Burger Assembly */
+    .stage { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+    #burger-stack {
+      min-height: 140px; min-width: 160px; padding: 10px;
+      display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start;
+      background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.08);
+      border: 2px dashed #b2bec3;
+      margin-bottom: 10px;
+    }
+    .stack-item { font-size: 34px; margin: -8px 0; transition: all .2s; filter: drop-shadow(0 2px 0 rgba(0,0,0,.1)); }
+    .empty-msg { color: #b2bec3; font-weight: 600; font-size: 14px; padding: 20px; }
 
-/* ===== SOL PANEL - MÜŞTERİ KUYRUĞU ===== */
-.customer-queue {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.customer-queue::-webkit-scrollbar { width: 4px; }
-.customer-queue::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    .controls { display: flex; gap: 10px; margin-bottom: 12px; }
+    button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; transition: transform .05s, box-shadow .2s; }
+    button:active { transform: scale(.96); }
+    .btn-primary { background: #00b894; color: white; box-shadow: 0 4px 0 #018a70; }
+    .btn-primary:disabled { background: #b2bec3; box-shadow: 0 4px 0 #99a0a5; cursor: not-allowed; }
+    .btn-danger { background: #d63031; color: white; box-shadow: 0 4px 0 #a02020; }
+    .btn-shop { background: #0984e3; color: white; box-shadow: 0 3px 0 #065da8; padding: 8px 12px; font-size: 13px; }
+    .btn-shop:disabled { background: #b2bec3; box-shadow: 0 3px 0 #95a0a5; }
 
-.customer-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.3s ease;
-  animation: slideIn 0.4s ease-out;
-}
-.customer-card.active {
-  border-color: #ffd700;
-  box-shadow: 0 0 15px rgba(255,215,0,0.3);
-  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
-}
-.customer-card .customer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.customer-card .customer-name {
-  font-size: 13px;
-  font-weight: 700;
-}
-.customer-card .customer-price {
-  font-size: 12px;
-  color: #4ade80;
-  font-weight: 700;
-}
-.customer-card .order-display {
-  font-size: 11px;
-  margin-bottom: 8px;
-  background: rgba(0,0,0,0.2);
-  padding: 6px 8px;
-  border-radius: 8px;
-  word-break: break-all;
-  line-height: 1.6;
-}
-.patience-bar-container {
-  width: 100%;
-  height: 6px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.patience-bar {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s linear, background 0.3s;
-}
-.patience-bar.high { background: linear-gradient(90deg, #4ade80, #22c55e); }
-.patience-bar.medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-.patience-bar.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .ingredients { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 10px; max-width: 520px; }
+    .ing-btn {
+      width: 72px; height: 72px; font-size: 28px; background: white; border: 2px solid #dfe6e9;
+      border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; box-shadow: 0 4px 0 #b2bec3;
+    }
+    .ing-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #b2bec3; }
+    .ing-btn .name { font-size: 11px; color: #636e72; font-weight: 700; margin-top: 2px; }
+    .ing-btn.locked { opacity: .4; cursor: not-allowed; }
 
-.no-customers {
-  text-align: center;
-  padding: 30px 10px;
-  color: rgba(255,255,255,0.4);
-  font-size: 14px;
-}
+    /* Right panel */
+    .upgrade-group { background: white; border-radius: 12px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+    .upgrade-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .upgrade-desc { font-size: 12px; color: #636e72; margin-bottom: 6px; }
+    .upgrade-cost { font-weight: 800; color: #e17055; font-size: 13px; }
+    .upgrade-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .level-badge { font-size: 12px; background: #dfe6e9; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 
-/* ===== ORTA PANEL - BURGER YAPMA ===== */
-.middle-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
+    .notification {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-20px);
+      background: #2d3436; color: #ffeaa7; padding: 10px 20px; border-radius: 10px;
+      font-weight: 700; opacity: 0; pointer-events: none; transition: all .3s; z-index: 100;
+      box-shadow: 0 6px 18px rgba(0,0,0,.3);
+    }
+    .notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+ .notification.good { color: #55efc4; }
+    .notification.bad { color: #ff7675; }
 
-.burger-assembly {
-  flex: 1;
-  background: linear-gradient(135deg, rgba(139,69,19,0.2), rgba(160,82,45,0.1));
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 250px;
-  border: 2px dashed rgba(255,255,255,0.15);
-  position: relative;
-}
-.burger-stack {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 2px;
-  min-height: 80px;
-  margin: 15px 0;
-}
-.burger-layer {
-  font-size: 28px;
-  animation: layerDrop 0.3s ease-out;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.burger-placeholder {
-  color: rgba(255,255,255,0.3);
-  font-size: 14px;
-  text-align: center;
-}
-.burger-info {
-  font-size: 13px;
-  color: rgba(255,255,255,0.6);
-  text-align: center;
-}
+    .level-flash {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .4s; z-index: 200;
+    }
+    .level-flash.active { opacity: 1; pointer-events: all; }
+    .level-card {
+      background: #ffeaa7; padding: 30px 40px; border-radius: 20px; text-align: center;
+      transform: scale(.8); transition: transform .4s cubic-bezier(.175,.885,.32,1.275);
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    .level-flash.active .level-card { transform: scale(1); }
+    .level-card h1 { font-size: 42px; color: #d63031; margin-bottom: 8px; }
+    .level-card p { font-size: 18px; color: #2d3436; font-weight: 700; }
 
-.ingredient-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 8px;
-}
-.ingredient-btn {
-  background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-  border: 2px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  padding: 10px 5px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-}
-.ingredient-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1));
-  border-color: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.ingredient-btn:active:not(:disabled) { transform: scale(0.95); }
-.ingredient-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  filter: grayscale(1);
-}
-.ingredient-btn .emoji { font-size: 24px; }
-.ingredient-btn .locked-text { font-size: 9px; color: #ef4444; }
+    /* Scrollbar polish */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); border-radius: 4px; }
 
-.action-buttons {
-  display: flex;
-  gap: 10px;
-}
-.action-btn {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-}
-.action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-.action-btn:active { transform: scale(0.97); }
-.btn-serve {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  color: #000;
-}
-.btn-serve:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.btn-trash {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #fff;
-  flex: 0.4;
-}
-
-/* ===== SAĞ PANEL - GELİŞTİRME ===== */
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
-}
-.right-panel::-webkit-scrollbar { width: 4px; }
-.right-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-
-.upgrade-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
-  transition: all 0.3s;
-}
-.upgrade-card:hover { border-color: rgba(255,255,255,0.2); }
-.upgrade-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-.upgrade-name {
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.upgrade-level {
-  font-size: 11px;
-  background: rgba(255,255,255,0.1);
-  padding: 2px 8px;
-  border-radius: 10px;
-  color: #fbbf24;
-}
-.upgrade-desc {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
-  margin-bottom: 8px;
-}
-.upgrade-btn {
-  width: 100%;
-  padding: 8px;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: #fff;
-}
-.upgrade-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99,102,241,0.4);
-}
-.upgrade-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  background: #555;
-}
-.upgrade-btn.maxed {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  opacity: 0.7;
-}
-
-/* ===== İSTATİSTİK PANEL ===== */
-.stats-section {
-  margin-top: auto;
-}
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
-}
-.stat-row .stat-val { color: #fbbf24; font-weight: 700; }
-
-/* ===== TOAST BİLDİRİM ===== */
-.toast-container {
-  position: fixed;
-  top: 70px;
-  right: 20px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-.toast {
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  animation: toastIn 0.4s ease-out, toastOut 0.4s ease-in 2.2s forwards;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  max-width: 300px;
-}
-.toast.success { background: linear-gradient(135deg, #4ade80, #22c55e); color: #000; }
-.toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
-.toast.info { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; }
-.toast.warning { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
-.toast.levelup { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; font-size: 15px; }
-
-/* ===== KAYDET/YÜKLE BUTONLARI ===== */
-.save-load-bar {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-.save-load-bar button {
-  flex: 1;
-  padding: 6px;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.save-load-bar button:hover {
-  background: rgba(255,255,255,0.15);
-}
-
-/* ===== ANİMASYONLAR ===== */
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes layerDrop {
-  from { opacity: 0; transform: translateY(-20px) scale(0.8); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(50px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes toastOut {
-  from { opacity: 1; transform: translateX(0); }
-  to { opacity: 0; transform: translateX(80px); }
-}
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-@keyframes coinFloat {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-40px); }
-}
-.coin-float {
-  position: absolute;
-  color: #ffd700;
-  font-weight: 900;
-  font-size: 16px;
-  animation: coinFloat 1s ease-out forwards;
-  pointer-events: none;
-  z-index: 50;
-}
-
-/* ===== MOBİL RESPONSIVE ===== */
-@media (max-width: 1024px) {
-  .game-container {
-    grid-template-columns: 200px 1fr 230px;
-    gap: 10px;
-    padding: 10px;
-  }
-}
-@media (max-width: 768px) {
-  .game-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    gap: 10px;
-    padding: 10px;
-  }
-  .top-bar { padding: 8px 12px; }
-  .top-bar .stat { font-size: 11px; padding: 4px 8px; }
-  .top-bar .game-title { font-size: 14px; }
-  .customer-queue {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    max-height: none;
-    padding-bottom: 5px;
-  }
-  .customer-card { min-width: 160px; flex-shrink: 0; }
-  .right-panel {
-    max-height: none;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .stats-section { grid-column: 1 / -1; }
-  .burger-assembly { min-height: 200px; }
-  .ingredient-grid { grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); gap: 6px; }
-  .ingredient-btn { padding: 8px 3px; font-size: 10px; }
-  .ingredient-btn .emoji { font-size: 20px; }
-}
-@media (max-width: 480px) {
-  .right-panel { grid-template-columns: 1fr; }
-  .ingredient-grid { grid-template-columns: repeat(5, 1fr); }
-}
-
-/* ===== TAB SİSTEMİ (MOBİL) ===== */
-.mobile-tabs {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(26,26,46,0.95);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(255,255,255,0.1);
-  z-index: 100;
-  padding: 6px 10px;
-  gap: 5px;
-}
-.mobile-tabs button {
-  flex: 1;
-  padding: 8px 5px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.6);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.mobile-tabs button.active {
-  background: linear-gradient(135deg, #e94560, #ff6b6b);
-  color: #fff;
-}
-.mobile-tabs button .tab-emoji { font-size: 18px; }
-
-@media (max-width: 768px) {
-  .mobile-tabs { display: flex; }
-  body { padding-bottom: 70px; }
-  .game-container { grid-template-columns: 1fr; }
-  .panel.hidden-mobile { display: none; }
-}
-
-/* ===== SEVİYE PROGRESS ===== */
-.level-progress-container {
-  width: 80px;
-  height: 6px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.level-progress {
-  height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ffaa00);
-  border-radius: 3px;
-  transition: width 0.3s;
-}
-
-/* ===== BAŞLANGIÇ EKRANI ===== */
-.start-screen {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.5s;
-}
-.start-screen.hidden { opacity: 0; pointer-events: none; }
-.start-title { font-size: 48px; margin-bottom: 10px; }
-.start-subtitle {
-  font-size: 28px;
-  font-weight: 900;
-  background: linear-gradient(90deg, #e94560, #ffd700);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 30px;
-}
-.start-btn {
-  padding: 16px 50px;
-  font-size: 20px;
-  font-weight: 800;
-  border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #e94560, #ff6b6b);
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 8px 25px rgba(233,69,96,0.5);
-  margin-bottom: 12px;
-}
-.start-btn:hover { transform: translateY(-3px) scale(1.05); }
-.start-btn.secondary {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  box-shadow: 0 8px 25px rgba(99,102,241,0.4);
-  font-size: 14px;
-  padding: 10px 30px;
-}
-</style>
+    @media (max-width: 960px) {
+      main.panels { grid-template-columns: 220px 1fr 260px; }
+    }
+  </style>
 </head>
 <body>
-
-<!-- ===== BAŞLANGIÇ EKRANI ===== -->
-<div class="start-screen" id="startScreen">
-  <div class="start-title">🍔</div>
-  <div class="start-subtitle">Burger Tycoon</div>
-  <button class="start-btn" onclick="startNewGame()">🎮 Yeni Oyun</button>
-  <button class="start-btn secondary" id="loadBtn" onclick="loadAndStart()" style="display:none;">💾 Kayıtlı Oyunu Yükle</button>
-</div>
-
-<!-- ===== ÜST DURUM ÇUBUĞU ===== -->
-<div class="top-bar">
-  <div class="game-title">🍔 Burger Tycoon</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
-    <div class="stat">💰 <span class="value" id="moneyDisplay">100₺</span></div>
-    <div class="stat">⭐ Sv.<span class="value" id="levelDisplay">1</span>
-      <div class="level-progress-container"><div class="level-progress" id="levelProgress"></div></div>
-    </div>
-    <div class="stat">🍔 <span class="value" id="burgerCount">0</span></div>
-    <div class="stat">💸 <span class="value" id="idleIncome">0₺/s</span></div>
-  </div>
-</div>
-
-<!-- ===== ANA OYUN ALANI ===== -->
-<div class="game-container">
-
-  <!-- SOL PANEL: MÜŞTERİ KUYRUĞU -->
-  <div class="panel" id="leftPanel">
-    <div class="panel-title">👥 Müşteri Kuyruğu</div>
-    <div class="customer-queue" id="customerQueue">
-      <div class="no-customers">Müşteriler geliyor...</div>
-    </div>
-  </div>
-
-  <!-- ORTA PANEL: BURGER YAPMA -->
-  <div class="panel middle-panel" id="middlePanel">
-    <div class="panel-title">🍔 Burger Yapma Alanı</div>
-    <div class="burger-assembly" id="burgerAssembly">
-      <div class="burger-info" id="selectedOrderInfo">Bir müşteri seçin veya burger yapmaya başlayın</div>
-      <div class="burger-stack" id="burgerStack">
-        <div class="burger-placeholder">Malzeme eklemek için aşağıdaki butonlara tıklayın</div>
+  <div class="game-container">
+    <header>
+      <div class="logo">🍔 Burger Tycoon</div>
+      <div class="statbar">
+        <span>💰 <span id="money">100</span>₺</span>
+        <span>🎖️ Seviye <span id="level">1</span></span>
+        <span>🍔 <span id="burgers">0</span></span>
+        <span>❌ Kaçırılan: <span id="missed">0</span></span>
+        <span>📈 Kazanç: <span id="earned">0</span>₺</span>
       </div>
-      <div class="burger-info" id="burgerValue">Burger değeri: 0₺</div>
-    </div>
+    </header>
 
-    <div class="ingredient-grid" id="ingredientGrid">
-      <!-- JS ile doldurulacak -->
-    </div>
+    <main class="panels">
+      <section class="panel left">
+        <h2>🧍 Müşteri Kuyruğu</h2>
+        <div id="customer-list"></div>
+      </section>
 
-    <div class="action-buttons">
-      <button class="action-btn btn-trash" onclick="trashBurger()">🗑️ Çöp</button>
-      <button class="action-btn btn-serve" id="serveBtn" onclick="serveBurger()" disabled>✅ Hazır - Müşteriye Ver</button>
-    </div>
-  </div>
+      <section class="panel center">
+        <h2>👨‍🍳 Burger Yapımı</h2>
+        <div class="stage">
+          <div id="burger-stack">
+            <div class="empty-msg">Malzeme ekle...</div>
+          </div>
+          <div class="controls">
+            <button id="serve-btn" class="btn-primary" disabled>✅ Hazır</button>
+            <button id="clear-btn" class="btn-danger">🗑️ Çöp</button>
+          </div>
+          <div class="ingredients" id="ingredient-buttons"></div>
+        </div>
+      </section>
 
-  <!-- SAĞ PANEL: GELİŞTİRMELER -->
-  <div class="panel right-panel" id="rightPanel">
-    <div class="panel-title">🔧 Geliştirmeler</div>
-    <div id="upgradeList">
-      <!-- JS ile doldurulacak -->
-    </div>
+      <section class="panel right" id="shop-panel">
+        <h2>🏗️ Geliştirmeler</h2>
+        <div class="upgrade-group">
+          <div class="upgrade-title">⚡ Hızlı Eller <span class="level-badge" id="lvl-hands">Seviye 0</span></div>
+          <div class="upgrade-desc">Müşterinin sabrı %10 daha yavaş azalır.</div>
+          <div class="upgrade-row">
+            <div class="upgrade-cost" id="cost-hands">50₺</div>
+            <button class="btn-shop" id="buy-hands" onclick="buyUpgrade('fastHands')">Satın Al</button>
+          </div>
+        </div>
 
-    <div class="stats-section">
-      <div class="panel-title">📊 İstatistikler</div>
-      <div class="stat-row"><span>Toplam Kazanç</span><span class="stat-val" id="statTotalEarned">0₺</span></div>
-      <div class="stat-row"><span>Yapılan Burger</span><span class="stat-val" id="statBurgersMade">0</span></div>
-      <div class="stat-row"><span>Kaçırılan Müşteri</span><span class="stat-val" id="statLostCustomers">0</span></div>
-      <div class="stat-row"><span>Doğru Sipariş</span><span class="stat-val" id="statCorrectOrders">0</span></div>
-      <div class="stat-row"><span>Oyun Süresi</span><span class="stat-val" id="statPlaytime">0dk</span></div>
-      <div class="save-load-bar">
-        <button onclick="saveGame()">💾 Kaydet</button>
-        <button onclick="loadGame()">📂 Yükle</button>
-        <button onclick="resetGame()">🔄 Sıfırla</button>
+        <div class="upgrade-group">
+          <div class="upgrade-title">📢 Reklam <span class="level-badge" id="lvl-ad">Seviye 0</span></div>
+          <div class="upgrade-desc">Müşteriler daha sık gelir.</div>
+          <div class="upgrade-row">
+            <div class="upgrade-cost" id="cost-ad">200₺</div>
+            <button class="btn-shop" id="buy-ad" onclick="buyUpgrade('ad')">Satın Al</button>
+          </div>
+        </div>
+
+        <div class="upgrade-group">
+          <div class="upgrade-title">🤖 Oto-Kasiyer <span class="level-badge" id="lvl-auto">Seviye 0</span></div>
+          <div class="upgrade-desc">Saniyede otomatik para kazan.</div>
+          <div class="upgrade-row">
+            <div class="upgrade-cost" id="cost-auto">300₺</div>
+            <button class="btn-shop" id="buy-auto" onclick="buyUpgrade('autoCashier')">Satın Al</button>
+          </div>
+        </div>
+
+        <div class="upgrade-group">
+          <div class="upgrade-title">🏪 Dükkan Genişletme <span class="level-badge" id="lvl-shop">Seviye 0</span></div>
+          <div class="upgrade-desc">Aynı anda daha fazla müşteri.</div>
+          <div class="upgrade-row">
+            <div class="upgrade-cost" id="cost-shop">500₺</div>
+            <button class="btn-shop" id="buy-shop" onclick="buyUpgrade('shopSize')">Satın Al</button>
+          </div>
+        </div>
+
+        <h2 style="margin-top:16px">🔓 Yeni Malzemeler</h2>
+        <div id="ingredient-shop"></div>
+      </section>
+    </main>
+
+    <div class="notification" id="notification"></div>
+
+    <div class="level-flash" id="level-flash">
+      <div class="level-card">
+        <h1>🎉 Seviye Atladın!</h1>
+        <p id="level-text">Seviye 2 oldun!</p>
       </div>
     </div>
   </div>
-</div>
 
-<!-- MOBİL TAB ÇUBUĞU -->
-<div class="mobile-tabs">
-  <button class="active" onclick="switchTab('left',this)"><span class="tab-emoji">👥</span>Müşteriler</button>
-  <button onclick="switchTab('middle',this)"><span class="tab-emoji">🍔</span>Burger</button>
-  <button onclick="switchTab('right',this)"><span class="tab-emoji">🔧</span>Geliştir</button>
-</div>
+  <script>
+    /* ===== DATA & CONFIG ===== */
+    const INGREDIENTS = [
+      {id:'ekmek', emoji:'🍞', name:'Ekmek', unlockCost:0, levelReq:1},
+      {id:'et', emoji:'🥩', name:'Et', unlockCost:0, levelReq:1},
+      {id:'peynir', emoji:'🧀', name:'Peynir', unlockCost:60, levelReq:1},
+      {id:'marul', emoji:'🥬', name:'Marul', unlockCost:80, levelReq:1},
+      {id:'domates', emoji:'🍅', name:'Domates', unlockCost:120, levelReq:2},
+      {id:'sogan', emoji:'🧅', name:'Soğan', unlockCost:180, levelReq:2},
+      {id:'tursu', emoji:'🥒', name:'Turşu', unlockCost:220, levelReq:3},
+      {id:'hardal', emoji:'🟡', name:'Hardal', unlockCost:260, levelReq:3},
+      {id:'ketcap', emoji:'🔴', name:'Ketçap', unlockCost:260, levelReq:4},
+    ];
 
-<!-- TOAST CONTAINER -->
-<div class="toast-container" id="toastContainer"></div>
+    const UPGRADE_COSTS = {
+      fastHands: [50,150,400,1000,2500,6000,15000,40000,100000,250000],
+      ad: [200,500,1500,5000,20000],
+      autoCashier: [300,1000,3000,10000,50000],
+      shopSize: [500,1500,5000,20000,100000]
+    };
 
-<script>
-// =========================================================
-// ===== BURGER TYCOON - ANA OYUN KODU ====================
-// =========================================================
+    const AUTO_INCOME = [0, 1, 3, 10, 50, 300]; // per level per second
+    const MAX_CUSTOMERS_BASE = [1,2,3,5,8,12]; // per shopSize level
 
-// ===== SABİTLER =====
-const INGREDIENTS = [
-  { id: 'bread', emoji: '🍞', name: 'Ekmek', unlockLevel: 0, unlockCost: 0 },
-  { id: 'meat', emoji: '🥩', name: 'Et', unlockLevel: 0, unlockCost: 0 },
-  { id: 'cheese', emoji: '🧀', name: 'Peynir', unlockLevel: 2, unlockCost: 80 },
-  { id: 'lettuce', emoji: '🥬', name: 'Marul', unlockLevel: 3, unlockCost: 120 },
-  { id: 'tomato', emoji: '🍅', name: 'Domates', unlockLevel: 4, unlockCost: 150 },
-  { id: 'onion', emoji: '🧅', name: 'Soğan', unlockLevel: 5, unlockCost: 200 },
-  { id: 'pickle', emoji: '🥒', name: 'Turşu', unlockLevel: 6, unlockCost: 250 },
-  { id: 'mustard', emoji: '🟡', name: 'Hardal', unlockLevel: 7, unlockCost: 300 },
-  { id: 'ketchup', emoji: '🔴', name: 'Ketçap', unlockLevel: 8, unlockCost: 350 }
-];
+    const AVATARS = ['👨','👩','🧑','👴','👵','🧓','👱‍♂️','👱‍♀️'];
 
-const CUSTOMER_NAMES = [
-  'Ahmet', 'Mehmet', 'Ayşe', 'Fatma', 'Ali', 'Zeynep', 'Mustafa', 'Elif',
-  'Hasan', 'Hüseyin', 'Emine', 'Hatice', 'İbrahim', 'Yusuf', 'Merve',
-  'Burak', 'Emre', 'Selin', 'Deniz', 'Cem', 'Gül', 'Murat', 'Esra',
-  'Onur', 'Sibel', 'Kemal', 'Derya', 'Tolga', 'Pınar', 'Serkan'
-];
+    let GAME = {
+      money: 100,
+      level: 1,
+      burgersMade: 0,
+      missedCustomers: 0,
+      totalEarned: 0,
+      unlockedIngredients: ['ekmek','et'],
+      customers: [],
+      currentBurger: [],
+      upgrades: { fastHands:0, ad:0, autoCashier:0, shopSize:0 },
+      lastSpawn: 0,
+      lastTick: performance.now(),
+      gameActive: true    };
 
-const CUSTOMER_EMOJIS = ['😊','😋','🤤','😁','🤩','😎','🥳','😺','🧑','👨','👩','👦','👧','🧔','👴','👵'];
+    /* ===== DOM REFS ===== */
+    const els = {
+      money: document.getElementById('money'),
+      level: document.getElementById('level'),
+      burgers: document.getElementById('burgers'),
+      missed: document.getElementById('missed'),
+      earned: document.getElementById('earned'),
+      customerList: document.getElementById('customer-list'),
+      burgerStack: document.getElementById('burger-stack'),
+      serveBtn: document.getElementById('serve-btn'),
+      clearBtn: document.getElementById('clear-btn'),
+      ingredientButtons: document.getElementById('ingredient-buttons'),
+      ingredientShop: document.getElementById('ingredient-shop'),
+      notification: document.getElementById('notification'),
+      levelFlash: document.getElementById('level-flash'),
+      levelText: document.getElementById('level-text'),
+      buyHands: document.getElementById('buy-hands'),
+      buyAd: document.getElementById('buy-ad'),
+      buyAuto: document.getElementById('buy-auto'),
+      buyShop: document.getElementById('buy-shop'),
+      costHands: document.getElementById('cost-hands'),
+      costAd: document.getElementById('cost-ad'),
+      costAuto: document.getElementById('cost-auto'),
+      costShop: document.getElementById('cost-shop'),
+      lvlHands: document.getElementById('lvl-hands'),
+      lvlAd: document.getElementById('lvl-ad'),
+      lvlAuto: document.getElementById('lvl-auto'),
+      lvlShop: document.getElementById('lvl-shop'),
+    };
 
-const UPGRADES = [
-  {
-    id: 'patience',
-    name: '⏳ Hızlı Eller',
-    desc: 'Müşteri sabrı %10 artar',
-    maxLevel: 10,
-    baseCost: 50,
-    costMultiplier: 2.2,
-    effect: (level) => 1 + level * 0.1
-  },
-  {
-    id: 'advertising',
-    name: '📢 Reklam',
-    desc: 'Daha sık müşteri gelir',
-    maxLevel: 5,
-    baseCost: 200,
-    costMultiplier: 2.5,
-    effect: (level) => Math.max(3000 - level * 400, 1000)
-  },
-  {
-    id: 'autoCashier',
-    name: '🤖 Oto-Kasiyar',
-    desc: 'Saniyede otomatik para üretir',
-    maxLevel: 10,
-    baseCost: 300,
-    costMultiplier: 2.8,
-    effect: (level) => level * 2
-  },
-  {
-    id: 'shopSize',
-    name: '🏪 Dükkan Genişletme',
-    desc: 'Aynı anda daha fazla müşteri',
-    maxLevel: 5,
-    baseCost: 500,
-    costMultiplier: 3,
-    effect: (level) => 3 + level
-  },
-  {
-    id: 'tipBonus',
-    name: '💎 Bahşiş Bonusu',
-    desc: 'Doğru siparişlerde ekstra bahşiş',
-    maxLevel: 5,
-    baseCost: 400,
-    costMultiplier: 2.5,
-    effect: (level) => level * 3
-  }
-];
-
-// ===== OYUN DURUMU =====
-let game = {
-  money: 100,
-  level: 1,
-  burgersToNextLevel: 10,
-  totalBurgersMade: 0,
-  totalEarned: 0,
-  lostCustomers: 0,
-  correctOrders: 0,
-  playtimeSeconds: 0,
-
-  // Geliştirme seviyeleri
-  upgrades: {
-    patience: 0,
-    advertising: 0,
-    autoCashier: 0,
-    shopSize: 0,
-    tipBonus: 0
-  },
-
-  // Açılmış malzemeler
-  unlockedIngredients: ['bread', 'meat'],
-
-  // Müşteri kuyruğu
-  customers: [],
-  selectedCustomer: null,
-  nextCustomerId: 1,
-
-  // Yapılmakta olan burger
-  currentBurger: [],
-
-  // Zamanlayıcılar
-  lastCustomerTime: 0,
-  lastIdleTime: 0,
-  lastSaveTime: 0,
-  gameStarted: false
-};
-
-// ===== YARDIMCI FONKSİYONLAR =====
-
-/** Toast bildirim göster */
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  setTimeout(() => {
-    if (toast.parentNode) toast.parentNode.removeChild(toast);
-  }, 2700);
-}
-
-/** Para animasyonu (floating coin) */
-function showCoinFloat(element, amount) {
-  const float = document.createElement('div');
-  float.className = 'coin-float';
-  float.textContent = `+${amount}₺`;
-  const rect = element.getBoundingClientRect();
-  float.style.left = rect.left + rect.width / 2 - 20 + 'px';
-  float.style.top = rect.top - 10 + 'px';
-  float.style.position = 'fixed';
-  document.body.appendChild(float);
-  setTimeout(() => { if (float.parentNode) float.parentNode.removeChild(float); }, 1100);
-}
-
-/** Geliştirme maliyetini hesapla */
-function getUpgradeCost(upgradeId) {
-  const upgrade = UPGRADES.find(u => u.id === upgradeId);
-  const level = game.upgrades[upgradeId];
-  return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
-}
-
-/** Mevcut malzeme listesini al (açılmış olanlar) */
-function getAvailableIngredients() {
-  return INGREDIENTS.filter(i => game.unlockedIngredients.includes(i.id));
-}
-
-/** Rastgele sipariş oluştur */
-function generateOrder() {
-  const available = getAvailableIngredients();
-  // Her zaman ekmek + et temel
-  const order = ['bread', 'meat'];
-
-  // Ekstra malzeme ekle (seviyeye göre daha karmaşık)
-  const extras = available.filter(i => i.id !== 'bread' && i.id !== 'meat');
-  const maxExtras = Math.min(extras.length, Math.floor(game.level / 2) + 1);
-  const numExtras = Math.floor(Math.random() * (maxExtras + 1));
-
-  const shuffled = [...extras].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < numExtras; i++) {
-    order.push(shuffled[i].id);
-  }
-
-  // Üste ekmek ekle
-  order.push('bread');
-  return order;
-}
-
-/** Sipariş fiyatını hesapla */
-function calculateOrderPrice(order) {
-  // Temel burger: 15₺, her ekstra malzeme: +5₺
-  const base = 15;
-  const extras = order.length - 3; // ekmek alt + et + ekmek üst = 3 temel
-  return base + Math.max(0, extras) * 5;
-}
-
-/** Siparişi emoji olarak göster */
-function orderToEmoji(order) {
-  return order.map(id => {
-    const ing = INGREDIENTS.find(i => i.id === id);
-    return ing ? ing.emoji : '?';
-  }).join(' ');
-}
-
-/** İki sipariş eşleşiyor mu kontrol et */
-function ordersMatch(order, burger) {
-  if (order.length !== burger.length) return false;
-  // Sıra önemli olmasın (ekmek hariç): basitlik için sıralı karşılaştır
-  const sortedOrder = [...order].sort();
-  const sortedBurger = [...burger].sort();
-  return sortedOrder.every((item, index) => item === sortedBurger[index]);
-}
-
-// ===== MÜŞTERİ SİSTEMİ =====
-
-/** Yeni müşteri ekle */
-function addCustomer() {
-  const maxCustomers = UPGRADES.find(u => u.id === 'shopSize').effect(game.upgrades.shopSize);
-  if (game.customers.length >= maxCustomers) return;
-
-  const order = generateOrder();
-  const patienceMultiplier = UPGRADES.find(u => u.id === 'patience').effect(game.upgrades.patience);
-  const basePatience = 15000 + game.level * 500; // ms cinsinden
-
-  const customer = {
-    id: game.nextCustomerId++,
-    name: CUSTOMER_NAMES[Math.floor(Math.random() * CUSTOMER_NAMES.length)],
-    emoji: CUSTOMER_EMOJIS[Math.floor(Math.random() * CUSTOMER_EMOJIS.length)],
-    order: order,
-    price: calculateOrderPrice(order),
-    maxPatience: basePatience * patienceMultiplier,
-    patience: basePatience * patienceMultiplier,
-    createdAt: performance.now()
-  };
-
-  game.customers.push(customer);
-  renderCustomers();
-}
-
-/** Müşteriyi seç */
-function selectCustomer(customerId) {
-  game.selectedCustomer = customerId;
-  renderCustomers();
-  updateServeButton();
-
-  const customer = game.customers.find(c => c.id === customerId);
-  if (customer) {
-    document.getElementById('selectedOrderInfo').textContent =
-      `${customer.emoji} ${customer.name} istiyor: ${orderToEmoji(customer.order)} (${customer.price}₺)`;
-  }
-}
-
-/** Müşteri kartlarını render et */
-function renderCustomers() {
-  const queue = document.getElementById('customerQueue');
-
-  if (game.customers.length === 0) {
-    queue.innerHTML = '<div class="no-customers">🕐 Müşteriler geliyor...</div>';
-    return;
-  }
-
-  // DOM diff yerine basit innerHTML (performans için sadece değiştiğinde)
-  const html = game.customers.map(c => {
-    const patiencePercent = Math.max(0, (c.patience / c.maxPatience) * 100);
-    const barClass = patiencePercent > 60 ? 'high' : patiencePercent > 30 ? 'medium' : 'low';
-    const activeClass = c.id === game.selectedCustomer ? 'active' : '';
-
-    return `<div class="customer-card ${activeClass}" onclick="selectCustomer(${c.id})">
-      <div class="customer-header">
-        <span class="customer-name">${c.emoji} ${c.name}</span>
-        <span class="customer-price">${c.price}₺</span>
-      </div>
-      <div class="order-display">${orderToEmoji(c.order)}</div>
-      <div class="patience-bar-container">
-        <div class="patience-bar ${barClass}" style="width:${patiencePercent}%"></div>
-      </div>
-    </div>`;
-  }).join('');
-
-  queue.innerHTML = html;
-}
-
-// ===== BURGER YAPMA SİSTEMİ =====
-
-/** Malzeme ekle */
-function addIngredient(ingredientId) {
-  if (game.currentBurger.length >= 12) {
-    showToast('Burger çok yüksek! 🫨', 'warning');
-    return;
-  }
-  game.currentBurger.push(ingredientId);
-  renderBurger();
-  updateServeButton();
-}
-
-/** Burgeri render et */
-function renderBurger() {
-  const stack = document.getElementById('burgerStack');
-  if (game.currentBurger.length === 0) {
-    stack.innerHTML = '<div class="burger-placeholder">Malzeme eklemek için aşağıdaki butonlara tıklayın</div>';
-    document.getElementById('burgerValue').textContent = 'Burger değeri: 0₺';
-    return;
-  }
-
-  stack.innerHTML = game.currentBurger.map((id, index) => {
-    const ing = INGREDIENTS.find(i => i.id === id);
-    return `<div class="burger-layer" style="animation-delay:${index * 0.05}s">${ing.emoji}</div>`;
-  }).join('');
-
-  const price = calculateOrderPrice(game.currentBurger);
-  document.getElementById('burgerValue').textContent = `Burger değeri: ${price}₺`;
-}
-
-/** Burgeri çöpe at */
-function trashBurger() {
-  if (game.currentBurger.length === 0) return;
-  game.currentBurger = [];
-  renderBurger();
-  updateServeButton();
-  showToast('Burger çöpe atıldı 🗑️', 'warning');
-}
-
-/** Burgeri müşteriye ver */
-function serveBurger() {
-  if (game.currentBurger.length < 2) {
-    showToast('Burger çok az malzemeli!', 'error');
-    return;
-  }
-
-  let customer = null;
-  let earned = 0;
-  const burgerPrice = calculateOrderPrice(game.currentBurger);
-
-  // Seçili müşteri varsa ona ver
-  if (game.selectedCustomer) {
-    customer = game.customers.find(c => c.id === game.selectedCustomer);
-  }
-
-  if (customer) {
-    // Sipariş doğru mu kontrol et
-    const isCorrect = ordersMatch(customer.order, game.currentBurger);
-    if (isCorrect) {
-      const tipBonus = UPGRADES.find(u => u.id === 'tipBonus').effect(game.upgrades.tipBonus);
-      earned = customer.price + tipBonus;
-      game.correctOrders++;
-      showToast(`✅ Doğru sipariş! +${earned}₺`, 'success');
-    } else {
-      earned = Math.floor(burgerPrice / 2);
-      showToast(`⚠️ Yanlış sipariş... +${earned}₺ (yarı fiyat)`, 'warning');
+    /* ===== CORE FUNCTIONS ===== */
+    function init() {
+      renderIngredientButtons();
+      renderIngredientShop();
+      updateUI();
+      requestAnimationFrame(gameLoop);
+      setInterval(autoCashierTick, 1000);
     }
 
-    // Müşteriyi kuyruktan çıkar
-    game.customers = game.customers.filter(c => c.id !== customer.id);
-    game.selectedCustomer = null;
-    document.getElementById('selectedOrderInfo').textContent = 'Bir müşteri seçin veya burger yapmaya başlayın';
-  } else {
-    // Müşteri seçili değilse, ilk müşteriye ver
-    if (game.customers.length > 0) {
-      customer = game.customers[0];
-      const isCorrect = ordersMatch(customer.order, game.currentBurger);
-      if (isCorrect) {
-        const tipBonus = UPGRADES.find(u => u.id === 'tipBonus').effect(game.upgrades.tipBonus);
-        earned = customer.price + tipBonus;
-        game.correctOrders++;
-        showToast(`✅ Doğru sipariş! +${earned}₺`, 'success');
+    function getMaxCustomers() {
+      return MAX_CUSTOMERS_BASE[Math.min(GAME.upgrades.shopSize, MAX_CUSTOMERS_BASE.length-1)];
+    }
+
+    function getMaxPatience() {
+      return 100 * (1 + 0.06 * GAME.upgrades.fastHands);
+    }
+
+    function getSpawnInterval() {
+      return Math.max(600, 3000 * Math.pow(0.72, GAME.upgrades.ad));
+    }
+
+    function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+    function showNotification(text, isGood=true) {
+      els.notification.textContent = text;
+      els.notification.className = 'notification show ' + (isGood?'good':'bad');
+      setTimeout(()=> els.notification.className='notification', 1500);
+    }
+
+    /* ===== CUSTOMERS ===== */
+    function spawnCustomer() {
+      const max = getMaxCustomers();
+      if(GAME.customers.length >= max) return;
+      const order = generateOrder();
+      const patience = getMaxPatience();
+      const c = {
+        id: Date.now()+Math.random(),
+        avatar: AVATARS[rand(0, AVATARS.length-1)],
+        order: order,
+        patience: patience,
+        maxPatience: patience,
+        created: performance.now()
+      };
+      GAME.customers.push(c);
+      renderCustomers();
+    }
+
+    function generateOrder() {
+      const base = ['ekmek','et'];
+      const extras = GAME.unlockedIngredients.filter(i => !base.includes(i));
+      const count = extras.length ? rand(0, Math.min(3, extras.length)) : 0;
+      const order = [...base];
+      // Her seferinde rastgele ekle, tekrar olabilir? Hayır, malzeme bir kez      const pool = extras.slice().sort(()=>Math.random()-.5);
+      for(let i=0;i<count;i++) order.push(pool[i]);
+      return order;
+    }
+
+    function renderCustomers() {
+      els.customerList.innerHTML = '';
+      if(!GAME.customers.length) {
+        els.customerList.innerHTML = '<div style="color:#636e72; font-weight:700; text-align:center; padding:20px;">Henüz müşteri yok...</div>';
+        return;
+      }
+      GAME.customers.forEach((c, idx) => {
+        const pct = Math.max(0, (c.patience/c.maxPatience)*100);
+        let color = '#00b894';
+        if(pct < 30) color = '#d63031';
+        else if(pct < 60) color = '#fdcb6e';
+
+        const div = document.createElement('div');
+        div.className = 'customer' + (c.patience <= 0 ? ' leaving':'');
+        div.innerHTML = `
+          <div class="customer-header">
+            <div class="customer-avatar">${c.avatar}</div>
+            <div class="customer-name">Müşteri #${idx+1}</div>
+          </div>
+          <div class="customer-want">
+            İstediği: ${c.order.map(id => {
+              const ing = INGREDIENTS.find(x=>x.id===id);
+              return `<span class="em">${ing?ing.emoji:'?'}</span>`;
+            }).join('')}
+          </div>
+          <div class="patience-track">
+            <div class="patience-fill" style="width:${pct}%; background:${color};"></div>
+          </div>
+        `;
+        els.customerList.appendChild(div);
+      });
+    }
+
+    /* ===== BURGER ASSEMBLY ===== */
+    function renderIngredientButtons() {
+      els.ingredientButtons.innerHTML = '';
+      INGREDIENTS.forEach(ing => {
+        const locked = !GAME.unlockedIngredients.includes(ing.id);
+        const btn = document.createElement('button');
+        btn.className = 'ing-btn' + (locked?' locked':'');
+        btn.innerHTML = `<div>${ing.emoji}</div><div class="name">${ing.name}</div>`;
+        if(!locked) {
+          btn.onclick = () => addIngredient(ing.id);
+        } else {
+          btn.title = 'Kilitli';
+ }
+        els.ingredientButtons.appendChild(btn);
+      });
+    }
+
+    function addIngredient(id) {
+      if(!GAME.unlockedIngredients.includes(id)) return;
+      if(GAME.customers.length === 0) {
+        showNotification('Önce müşteri gelmeli!', false);
+        return;
+      }
+      GAME.currentBurger.push(id);
+      renderBurgerStack();
+    }
+
+    function renderBurgerStack() {
+      els.burgerStack.innerHTML = '';
+      if(GAME.currentBurger.length === 0) {
+        els.burgerStack.innerHTML = '<div class="empty-msg">Malzeme ekle...</div>';
+        els.serveBtn.disabled = true;
+        return;
+      }
+      GAME.currentBurger.forEach(id => {
+        const ing = INGREDIENTS.find(x=>x.id===id);
+        const div = document.createElement('div');
+        div.className = 'stack-item';
+        div.textContent = ing?ing.emoji:'?';
+        els.burgerStack.appendChild(div);
+      });
+      els.serveBtn.disabled = false;
+    }
+
+    function clearBurger() {
+      GAME.currentBurger = [];
+      renderBurgerStack();
+    }
+
+    function serveBurger() {
+      if(!GAME.customers.length || !GAME.currentBurger.length) return;
+
+      const target = GAME.customers[0];
+      const correct = isOrderCorrect(target.order, GAME.currentBurger);
+
+      // Price calculation
+      const basePrice = 15;
+      const extras = Math.max(0, target.order.length - 2);
+      const totalPrice = basePrice + extras*5;
+
+      let earned = 0;
+      if(correct) {
+        earned = totalPrice;
+        showNotification(`+${earned}₺ Doğru sipariş!`, true);
+        GAME.burgersMade++;
+        checkLevelUp();
       } else {
-        earned = Math.floor(burgerPrice / 2);
-        showToast(`⚠️ Yanlış sipariş... +${earned}₺`, 'warning');
+        earned = Math.floor(totalPrice/2);
+        showNotification(`+${earned}₺ Yanlış sipariş (yarı fiyat)`, false);
+        GAME.burgersMade++;
+        checkLevelUp();
       }
-      game.customers = game.customers.filter(c => c.id !== customer.id);
-      game.selectedCustomer = null;
-    } else {
-      // Müşteri yok, burgeri sadece baz fiyata sat
-      earned = Math.floor(burgerPrice / 3);
-      showToast(`🍔 Burger satıldı (müşterisiz): +${earned}₺`, 'info');
-    }
-  }
 
-  // Para ekle
-  game.money += earned;
-  game.totalEarned += earned;
-  game.totalBurgersMade++;
+      GAME.money += earned;
+      GAME.totalEarned += earned;
 
-  // Seviye kontrolü
-  checkLevelUp();
-
-  // Coin animasyonu
-  showCoinFloat(document.getElementById('serveBtn'), earned);
-
-  // Burgeri sıfırla
-  game.currentBurger = [];
-  renderBurger();
-  renderCustomers();
-  updateUI();
-  updateServeButton();
-}
-
-/** Servis butonunu güncelle */
-function updateServeButton() {
-  const btn = document.getElementById('serveBtn');
-  btn.disabled = game.currentBurger.length < 2;
-}
-
-// ===== MALZEME BUTONLARI =====
-
-function renderIngredients() {
-  const grid = document.getElementById('ingredientGrid');
-  grid.innerHTML = INGREDIENTS.map(ing => {
-    const isUnlocked = game.unlockedIngredients.includes(ing.id);
-    const canUnlock = !isUnlocked && game.level >= ing.unlockLevel;
-
-    if (!isUnlocked && !canUnlock) {
-      return `<button class="ingredient-btn" disabled>
-        <span class="emoji">🔒</span>
-        <span>${ing.name}</span>
-        <span class="locked-text">Sv.${ing.unlockLevel}</span>
-      </button>`;
+      // Remove customer and clear plate
+      GAME.customers.shift();
+      GAME.currentBurger = [];
+      renderBurgerStack();
+      renderCustomers();
+      updateUI();
     }
 
-    if (!isUnlocked && canUnlock) {
-      return `<button class="ingredient-btn" onclick="unlockIngredient('${ing.id}')" style="border-color:#fbbf24;">
-        <span class="emoji">${ing.emoji}</span>
-        <span>${ing.name}</span>
-        <span class="locked-text" style="color:#fbbf24;">${ing.unlockCost}₺</span>
-      </button>`;
+    function isOrderCorrect(order, burger) {
+      if(order.length !== burger.length) return false;
+      const a = [...order].sort();
+      const b = [...burger].sort();
+      return a.every((v,i) => v===b[i]);
     }
 
-    return `<button class="ingredient-btn" onclick="addIngredient('${ing.id}')">
-      <span class="emoji">${ing.emoji}</span>
-      <span>${ing.name}</span>
-    </button>`;
-  }).join('');
-}
-
-/** Malzeme aç */
-function unlockIngredient(ingredientId) {
-  const ing = INGREDIENTS.find(i => i.id === ingredientId);
-  if (!ing || game.money < ing.unlockCost) {
-    showToast('Yeterli paranız yok! 💸', 'error');
-    return;
-  }
-
-  game.money -= ing.unlockCost;
-  game.unlockedIngredients.push(ingredientId);
-  showToast(`${ing.emoji} ${ing.name} açıldı!`, 'success');
-  renderIngredients();
-  updateUI();
-}
-
-// ===== GELİŞTİRME SİSTEMİ =====
-
-function renderUpgrades() {
-  const list = document.getElementById('upgradeList');
-  list.innerHTML = UPGRADES.map(upgrade => {
-    const level = game.upgrades[upgrade.id];
-    const isMaxed = level >= upgrade.maxLevel;
-    const cost = isMaxed ? 0 : getUpgradeCost(upgrade.id);
-    const canAfford = game.money >= cost;
-
-    let effectText = '';
-    if (upgrade.id === 'patience') effectText = `Sabır: +${level * 10}%`;
-    else if (upgrade.id === 'advertising') effectText = `Müşteri aralığı: ${(upgrade.effect(level) / 1000).toFixed(1)}s`;
-    else if (upgrade.id === 'autoCashier') effectText = `Gelir: ${upgrade.effect(level)}₺/s`;
-    else if (upgrade.id === 'shopSize') effectText = `Max müşteri: ${upgrade.effect(level)}`;
-    else if (upgrade.id === 'tipBonus') effectText = `Bahşiş: +${upgrade.effect(level)}₺`;
-
-    return `<div class="upgrade-card">
-      <div class="upgrade-header">
-        <span class="upgrade-name">${upgrade.name}</span>
-        <span class="upgrade-level">${level}/${upgrade.maxLevel}</span>
-      </div>
-      <div class="upgrade-desc">${upgrade.desc} — ${effectText}</div>
-      <button class="upgrade-btn ${isMaxed ? 'maxed' : ''}" 
-              onclick="buyUpgrade('${upgrade.id}')" 
-              ${isMaxed || !canAfford ? 'disabled' : ''}>
-        ${isMaxed ? '✅ MAKS SEVİYE' : `⬆️ Geliştir - ${cost}₺`}
-      </button>
-    </div>`;
-  }).join('');
-}
-
-/** Geliştirme satın al */
-function buyUpgrade(upgradeId) {
-  const upgrade = UPGRADES.find(u => u.id === upgradeId);
-  const level = game.upgrades[upgradeId];
-  if (level >= upgrade.maxLevel) return;
-
-  const cost = getUpgradeCost(upgradeId);
-  if (game.money < cost) {
-    showToast('Yeterli paranız yok! 💸', 'error');
-    return;
-  }
-
-  game.money -= cost;
-  game.upgrades[upgradeId]++;
-  showToast(`${upgrade.name} seviye ${game.upgrades[upgradeId]}! 🎉`, 'success');
-  renderUpgrades();
-  updateUI();
-}
-
-// ===== SEVİYE SİSTEMİ =====
-
-function checkLevelUp() {
-  const burgersNeeded = game.level * 10;
-  if (game.totalBurgersMade >= game.burgersToNextLevel) {
-    game.level++;
-    game.burgersToNextLevel += game.level * 10;
-    showToast(`🌟 SEVİYE ${game.level}! Tebrikler!`, 'levelup');
-
-    // Yeni malzeme açılabilir mi kontrol et
-    INGREDIENTS.forEach(ing => {
-      if (ing.unlockLevel === game.level && !game.unlockedIngredients.includes(ing.id)) {
-        showToast(`${ing.emoji} ${ing.name} artık satın alınabilir!`, 'info');
+    /* ===== LEVEL SYSTEM ===== */
+    function checkLevelUp() {
+      const newLevel = Math.floor(GAME.burgersMade / 10) + 1;
+      if(newLevel > GAME.level) {
+        GAME.level = newLevel;
+        const bonus = newLevel * 20;
+        GAME.money += bonus;
+        GAME.totalEarned += bonus;
+        showLevelFlash(newLevel, bonus);
+        renderIngredientShop(); // unlock new ingredients potentially
+        renderIngredientButtons();
       }
-    });
-
-    renderIngredients();
-    renderUpgrades();
-  }
-}
-
-// ===== UI GÜNCELLEME =====
-
-function updateUI() {
-  document.getElementById('moneyDisplay').textContent = `${Math.floor(game.money)}₺`;
-  document.getElementById('levelDisplay').textContent = game.level;
-  document.getElementById('burgerCount').textContent = game.totalBurgersMade;
-
-  const idleRate = UPGRADES.find(u => u.id === 'autoCashier').effect(game.upgrades.autoCashier);
-  document.getElementById('idleIncome').textContent = `${idleRate}₺/s`;
-
-  // Seviye progress
-  const prevThreshold = game.burgersToNextLevel - game.level * 10;
-  const needed = game.level * 10;
-  const progress = Math.min(100, ((game.totalBurgersMade - prevThreshold) / needed) * 100);
-  document.getElementById('levelProgress').style.width = `${Math.max(0, progress)}%`;
-
-  // İstatistikler
-  document.getElementById('statTotalEarned').textContent = `${Math.floor(game.totalEarned)}₺`;
-  document.getElementById('statBurgersMade').textContent = game.totalBurgersMade;
-  document.getElementById('statLostCustomers').textContent = game.lostCustomers;
-  document.getElementById('statCorrectOrders').textContent = game.correctOrders;
-
-  const mins = Math.floor(game.playtimeSeconds / 60);
-  const secs = game.playtimeSeconds % 60;
-  document.getElementById('statPlaytime').textContent = mins > 0 ? `${mins}dk ${secs}s` : `${secs}s`;
-}
-
-// ===== OYUN DÖNGÜSÜ =====
-
-let lastFrameTime = 0;
-let accumulatedTime = 0;
-let customerAccumulator = 0;
-let idleAccumulator = 0;
-let saveAccumulator = 0;
-let playtimeAccumulator = 0;
-
-function gameLoop(timestamp) {
-  if (!game.gameStarted) {
-    requestAnimationFrame(gameLoop);
-    return;
-  }
-
-  if (lastFrameTime === 0) lastFrameTime = timestamp;
-  const deltaTime = Math.min(timestamp - lastFrameTime, 200); // Cap delta to prevent spiral
-  lastFrameTime = timestamp;
-
-  // Müşteri sabrını azalt
-  let customersChanged = false;
-  game.customers.forEach(c => {
-    c.patience -= deltaTime;
-  });
-
-  // Sabrı biten müşterileri çıkar
-  const before = game.customers.length;
-  const leavingCustomers = game.customers.filter(c => c.patience <= 0);
-  if (leavingCustomers.length > 0) {
-    leavingCustomers.forEach(c => {
-      game.lostCustomers++;
-      // Para cezası: sipariş fiyatının %20'si
-      const penalty = Math.floor(c.price * 0.2);
-      game.money = Math.max(0, game.money - penalty);
-    });
-    game.customers = game.customers.filter(c => c.patience > 0);
-    if (game.selectedCustomer && !game.customers.find(c => c.id === game.selectedCustomer)) {
-      game.selectedCustomer = null;
-      document.getElementById('selectedOrderInfo').textContent = 'Müşteri gitti! Bir müşteri seçin.';
     }
-    if (leavingCustomers.length === 1) {
-      showToast(`😤 ${leavingCustomers[0].name} sabırsızlandı ve gitti!`, 'error');
-    } else if (leavingCustomers.length > 1) {
-      showToast(`😤 ${leavingCustomers.length} müşteri gitti!`, 'error');
+
+    function showLevelFlash(lv, bonus) {
+      els.levelText.textContent = `Seviye ${lv} oldun! (${bonus}₺ bonus)`;
+      els.levelFlash.classList.add('active');
+      setTimeout(()=> els.levelFlash.classList.remove('active'), 2000);
+      updateUI();
     }
-    customersChanged = true;
-  }
 
-  // Müşteri kuyruğunu düzenli render et (her 200ms)
-  accumulatedTime += deltaTime;
-  if (accumulatedTime >= 200) {
-    accumulatedTime = 0;
-    renderCustomers();
-  }
-
-  // Yeni müşteri ekleme
-  const customerInterval = UPGRADES.find(u => u.id === 'advertising').effect(game.upgrades.advertising);
-  customerAccumulator += deltaTime;
-  if (customerAccumulator >= customerInterval) {
-    customerAccumulator = 0;
-    addCustomer();
-  }
-
-  // İdle gelir (her saniye)
-  idleAccumulator += deltaTime;
-  if (idleAccumulator >= 1000) {
-    idleAccumulator -= 1000;
-    const idleRate = UPGRADES.find(u => u.id === 'autoCashier').effect(game.upgrades.autoCashier);
-    if (idleRate > 0) {
-      game.money += idleRate;
-      game.totalEarned += idleRate;
+    /* ===== SHOP / UPGRADES ===== */
+    function renderIngredientShop() {
+      els.ingredientShop.innerHTML = '';
+      INGREDIENTS.forEach(ing => {
+        if(GAME.unlockedIngredients.includes(ing.id)) return;
+        const div = document.createElement('div');
+        div.className = 'upgrade-group';
+        const lockedByLevel = GAME.level < ing.levelReq;
+        div.innerHTML = `
+          <div class="upgrade-title">${ing.emoji} ${ing.name}</div>
+          <div class="upgrade-desc">${lockedByLevel ? `Seviye ${ing.levelReq} gerekli` : `Burgerlere ${ing.name.toLowerCase()} ekle!`}</div>
+          <div class="upgrade-row">
+            <div class="upgrade-cost">${ing.unlockCost}₺</div>
+            <button class="btn-shop" ${GAME.money < ing.unlockCost || lockedByLevel ? 'disabled':''} onclick="unlockIngredient('${ing.id}')">
+ ${lockedByLevel ? 'Kilitli' : 'Aç'}
+            </button>
+          </div>
+        `;
+        els.ingredientShop.appendChild(div);
+      });
+      if(!els.ingredientShop.children.length) {
+        els.ingredientShop.innerHTML = '<div style="color:#636e72; font-size:13px;">Tüm malzemeler açık!</div>';
+      }
     }
-  }
 
-  // Oyun süresi (her saniye)
-  playtimeAccumulator += deltaTime;
-  if (playtimeAccumulator >= 1000) {
-    playtimeAccumulator -= 1000;
-    game.playtimeSeconds++;
-  }
+    window.unlockIngredient = function(id) {
+      const ing = INGREDIENTS.find(x=>x.id===id);
+      if(!ing || GAME.unlockedIngredients.includes(id)) return;
+      if(GAME.money < ing.unlockCost) return;
+      if(GAME.level < ing.levelReq) return;
+      GAME.money -= ing.unlockCost;
+      GAME.unlockedIngredients.push(id);
+      showNotification(`${ing.name} açıldı!`, true);
+      renderIngredientShop();
+      renderIngredientButtons();
+      updateUI();
+    };
 
-  // UI güncelle (her 300ms)
-  saveAccumulator += deltaTime;
-  if (saveAccumulator >= 300) {
-    saveAccumulator = 0;
-    updateUI();
-    renderUpgrades();
-  }
+    window.buyUpgrade = function(type) {
+      const current = GAME.upgrades[type];
+      const costs = UPGRADE_COSTS[type];
+      if(current >= costs.length) return;
+      const cost = costs[current];
+      if(GAME.money < cost) {
+        showNotification('Yeterli para yok!', false);
+        return;
+      }
+      GAME.money -= cost;
+      GAME.upgrades[type]++;
+      showNotification('Geliştirme satın alındı!', true);
+      updateShopUI();
+      updateUI();
+    };
 
-  // Otomatik kayıt (her 30 saniye)
-  if (game.playtimeSeconds % 30 === 0 && game.playtimeSeconds > 0) {
-    // saveGame() çağırmak yerine, sadece localStorage'a yaz
-    try {
-      localStorage.setItem('burgerTycoonSave', JSON.stringify(game));
-    } catch(e) {}
-  }
+    function updateShopUI() {
+      const set = (type, label, maxLevel) => {
+        const cur = GAME.upgrades[type];
+        const maxed = cur >= maxLevel;
+        const cost = maxed ? 'MAX' : UPGRADE_COSTS[type][cur] + '₺';
+        const btn = document.getElementById('buy-'+type.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()));
+        const costEl = document.getElementById('cost-'+type.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()));
+        const lvlEl = document.getElementById('lvl-'+type.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()));
+        if(costEl) costEl.textContent = cost;
+        if(lvlEl) lvlEl.textContent = 'Seviye ' + cur;
+        if(btn) {
+          btn.disabled = maxed || GAME.money < (UPGRADE_COSTS[type][cur]||Infinity);
+          if(maxed) { btn.textContent = 'MAX'; }
+        }
+      };
+      set('fastHands','hands', UPGRADE_COSTS.fastHands.length);
+      set('ad','ad', UPGRADE_COSTS.ad.length);
+      set('autoCashier','auto', UPGRADE_COSTS.autoCashier.length);
+      set('shopSize','shop', UPGRADE_COSTS.shopSize.length);
 
-  requestAnimationFrame(gameLoop);
-}
-
-// ===== KAYIT/YÜKLEME SİSTEMİ =====
-
-function saveGame() {
-  try {
-    const saveData = JSON.stringify(game);
-    localStorage.setItem('burgerTycoonSave', saveData);
-    showToast('💾 Oyun kaydedildi!', 'success');
-  } catch (e) {
-    showToast('Kayıt başarısız! 😢', 'error');
-  }
-}
-
-function loadGame() {
-  try {
-    const saveData = localStorage.getItem('burgerTycoonSave');
-    if (!saveData) {
-      showToast('Kayıtlı oyun bulunamadı!', 'error');
-      return false;
+ // ingredient shop buttons update
+      renderIngredientShop();
     }
-    const loaded = JSON.parse(saveData);
-    // Eksik alanları varsayılanlarla doldur
-    game = { ...game, ...loaded };
-    game.customers = []; // Müşterileri sıfırla (patience timings kaybolur)
-    game.selectedCustomer = null;
-    game.currentBurger = [];
 
-    renderAll();
-    showToast('📂 Oyun yüklendi!', 'success');
-    return true;
-  } catch (e) {
-    showToast('Yükleme başarısız! 😢', 'error');
-    return false;
-  }
-}
-
-function resetGame() {
-  if (!confirm('Tüm ilerlemeniz silinecek. Emin misiniz?')) return;
-  localStorage.removeItem('burgerTycoonSave');
-  location.reload();
-}
-
-function hasSavedGame() {
-  return localStorage.getItem('burgerTycoonSave') !== null;
-}
-
-// ===== TÜM RENDER =====
-function renderAll() {
-  renderCustomers();
-  renderBurger();
-  renderIngredients();
-  renderUpgrades();
-  updateUI();
-  updateServeButton();
-}
-
-// ===== MOBİL TAB SİSTEMİ =====
-function switchTab(tab, btn) {
-  // Tüm tab butonlarından active kaldır
-  document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
-  const left = document.getElementById('leftPanel');
-  const middle = document.getElementById('middlePanel');
-  const right = document.getElementById('rightPanel');
-
-  left.classList.remove('hidden-mobile');
-  middle.classList.remove('hidden-mobile');
-  right.classList.remove('hidden-mobile');
-
-  if (tab === 'left') {
-    middle.classList.add('hidden-mobile');
-    right.classList.add('hidden-mobile');
-  } else if (tab === 'middle') {
-    left.classList.add('hidden-mobile');
-    right.classList.add('hidden-mobile');
-  } else {
-    left.classList.add('hidden-mobile');
-    middle.classList.add('hidden-mobile');
-  }
-}
-
-// ===== BAŞLATMA =====
-
-function startNewGame() {
-  document.getElementById('startScreen').classList.add('hidden');
-  setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; }, 500);
-  game.gameStarted = true;
-  lastFrameTime = 0;
-  renderAll();
-
-  // İlk müşteriyi hemen ekle
-  setTimeout(() => addCustomer(), 500);
-  setTimeout(() => addCustomer(), 1500);
-
-  // Mobilde varsayılan olarak burger sekmesini göster
-  if (window.innerWidth <= 768) {
-    const middleTab = document.querySelectorAll('.mobile-tabs button')[1];
-    switchTab('middle', middleTab);
-  }
-}
-
-function loadAndStart() {
-  document.getElementById('startScreen').classList.add('hidden');
-  setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; }, 500);
-  loadGame();
-  game.gameStarted = true;
-  lastFrameTime = 0;
-
-  if (window.innerWidth <= 768) {
-    const middleTab = document.querySelectorAll('.mobile-tabs button')[1];
-    switchTab('middle', middleTab);
-  }
-}
-
-// Sayfa yüklendiğinde
-window.addEventListener('DOMContentLoaded', () => {
-  // Kayıtlı oyun var mı kontrol et
-  if (hasSavedGame()) {
-    document.getElementById('loadBtn').style.display = 'block';
-  }
-
-  // Oyun döngüsünü başlat
-  requestAnimationFrame(gameLoop);
-
-  // Sayfa kapanırken otomatik kaydet
-  window.addEventListener('beforeunload', () => {
-    if (game.gameStarted) {
-      try {
-        localStorage.setItem('burgerTycoonSave', JSON.stringify(game));
-      } catch(e) {}
+    function autoCashierTick() {
+      const inc = AUTO_INCOME[Math.min(GAME.upgrades.autoCashier, AUTO_INCOME.length-1)];
+      if(inc > 0) {
+        GAME.money += inc;
+        GAME.totalEarned += inc;
+        updateUI();
+      }
     }
-  });
-});
-</script>
+
+    /* ===== GAME LOOP ===== */
+    function gameLoop(now) {
+      if(!GAME.gameActive) return;
+      const dt = now - GAME.lastTick;
+      if(dt > 100) {
+        // update patience every ~100ms
+        const decay = 1.2 * (dt/100); // base patience decay        const decayMult = 1 - (0.06 * GAME.upgrades.fastHands); // max60% slower at lvl10? Actually 0.06*10=0.6        let removed = false;
+        for(let i=GAME.customers.length-1;i>=0;i--) {
+          GAME.customers[i].patience -= decay * Math.max(0.4, 1 - GAME.upgrades.fastHands*0.08);
+          if(GAME.customers[i].patience <= 0) {
+ GAME.customers.splice(i,1);
+            GAME.missedCustomers++;
+            removed = true;
+ }
+        }
+        if(removed) renderCustomers();
+
+ // spawn logic
+        if(now - GAME.lastSpawn > getSpawnInterval()) {
+          spawnCustomer();
+          GAME.lastSpawn = now;
+        }
+
+        GAME.lastTick = now;
+      }
+      updateShopUI();
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* ===== UI HELPERS ===== */
+    function updateUI() {
+      els.money.textContent = GAME.money.toLocaleString('tr-TR');
+      els.level.textContent = GAME.level;
+      els.burgers.textContent = GAME.burgersMade;
+      els.missed.textContent = GAME.missedCustomers;
+      els.earned.textContent = GAME.totalEarned.toLocaleString('tr-TR');
+      els.serveBtn.disabled = !GAME.customers.length || !GAME.currentBurger.length;
+    }
+
+    /* ===== EVENT LISTENERS ===== */
+    els.serveBtn.addEventListener('click', serveBurger);
+    els.clearBtn.addEventListener('click', clearBurger);
+
+    // Start
+    init();
+  </script>
 </body>
 </html>
-```

@@ -1,636 +1,1407 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Burger Tycoon 🍔</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
- body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #2d3436;
-      color: #2d3436;
-      overflow: hidden;
-      height: 100vh;
-    }
-    .game-container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background: #e17055;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,.3);
-      z-index: 10;
-    }
-    .logo { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-    .statbar { display: flex; gap: 16px; font-weight: 600; font-size: 15px; }
-    .statbar span { opacity: .95; }
-    main.panels {
-      display: grid;
-      grid-template-columns: 280px 1fr 300px;
-      flex: 1;
-      gap: 0;
-      overflow: hidden;
-    }
-    .panel { overflow-y: auto; padding: 16px; }
-    .panel.left { background: #ffeaa7; border-right: 4px solid #fdcb6e; }
-    .panel.center { background: #f5f6fa; display: flex; flex-direction: column; align-items: center; }
-    .panel.right { background: #81ecec; border-left: 4px solid #00cec9; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🍔 Burger Tycoon Deluxe</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1d23;--muted:#6b7280;--paper:#fefcf3;
+  --brand:#e85935;--brand-dark:#b83b23;--brand-glow:rgba(232,89,53,.3);
+  --mint:#16a34a;--mint-glow:rgba(22,163,74,.25);
+  --aqua:#0891b2;--gold:#eab308;--gold-glow:rgba(234,179,8,.3);
+  --danger:#dc2626;--danger-glow:rgba(220,38,38,.25);
+  --panel:rgba(255,255,255,.92);--line:rgba(0,0,0,.08);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.08);
+  --shadow-md:0 8px 24px rgba(0,0,0,.12);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.18);
+  --radius:12px;--radius-sm:8px;--radius-xs:6px;
+}
+html{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:linear-gradient(145deg,#1a1d23 0%,#27313f 40%,#1e2a3a 100%);
+  color:var(--ink);height:100%;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+button{font:inherit;border:0;cursor:pointer;user-select:none}
+button:disabled{cursor:not-allowed;opacity:.45;filter:grayscale(.5)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:9px}
 
-    h2 { font-size: 18px; margin-bottom: 12px; color: #2d3436; border-bottom: 2px solid rgba(0,0,0,.1); padding-bottom: 6px; }
+/* ===== APP LAYOUT ===== */
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;overflow:hidden}
 
-    /* Customers */
-    #customer-list { display: flex; flex-direction: column; gap: 12px; }
-    .customer {
-      background: white;
-      border-radius: 12px;
-      padding: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      position: relative;
-      border-left: 5px solid #00b894;
- transition: transform .2s;
-    }
-    .customer-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .customer-avatar { font-size: 28px; }
-    .customer-name { font-weight: 700; font-size: 14px; flex: 1; }
-    .customer-want { font-size: 12px; color: #636e72; margin-bottom: 6px; }
-    .customer-want .em { font-size: 18px; margin-right: 2px; }
-    .patience-track {
-      width: 100%; height: 8px; background: #dfe6e9; border-radius: 4px; overflow: hidden;
-    }
-    .patience-fill { height: 100%; border-radius: 4px; transition: width .1s linear, background .3s; }
-    .customer.leaving { opacity: .5; transform: translateX(-20px); border-left-color: #d63031; }
+/* ===== TOP BAR ===== */
+.topbar{
+  background:linear-gradient(90deg,rgba(15,18,24,.97),rgba(22,28,38,.97));
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:8px 16px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);position:relative;z-index:50;
+  flex-wrap:wrap;min-height:62px;
+}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.brand-logo{
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,#ffd166,#ef6f3e);
+  display:grid;place-items:center;font-size:24px;
+  box-shadow:0 4px 14px rgba(239,111,62,.4);
+}
+.brand h1{color:#fff;font-size:17px;line-height:1.1;white-space:nowrap}
+.brand small{color:rgba(255,255,255,.5);font-size:10px;display:block;margin-top:1px}
+.stats-row{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center}
+.stat-chip{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:5px;
+  white-space:nowrap;
+}
+.stat-chip .label{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase}
+.stat-chip .value{color:#fff;font-size:14px;font-weight:800}
+.stat-chip .value.money{color:#fbbf24}
+.stat-chip .value.rep{color:#34d399}
+.stat-chip .value.combo{color:#f472b6}
+.top-btns{display:flex;gap:5px;flex-shrink:0}
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.08);color:#fff;font-size:16px;
+  border:1px solid rgba(255,255,255,.1);transition:.15s;
+  display:grid;place-items:center;
+}
+.icon-btn:hover{background:rgba(255,255,255,.16)}
 
-    /* Burger Assembly */
-    .stage { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-    #burger-stack {
-      min-height: 140px; min-width: 160px; padding: 10px;
-      display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start;
-      background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.08);
-      border: 2px dashed #b2bec3;
-      margin-bottom: 10px;
-    }
-    .stack-item { font-size: 34px; margin: -8px 0; transition: all .2s; filter: drop-shadow(0 2px 0 rgba(0,0,0,.1)); }
-    .empty-msg { color: #b2bec3; font-weight: 600; font-size: 14px; padding: 20px; }
+/* ===== MAIN LAYOUT ===== */
+.main-layout{
+  display:grid;grid-template-columns:290px 1fr 300px;
+  min-height:0;overflow:hidden;
+}
 
-    .controls { display: flex; gap: 10px; margin-bottom: 12px; }
-    button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; transition: transform .05s, box-shadow .2s; }
-    button:active { transform: scale(.96); }
-    .btn-primary { background: #00b894; color: white; box-shadow: 0 4px 0 #018a70; }
-    .btn-primary:disabled { background: #b2bec3; box-shadow: 0 4px 0 #99a0a5; cursor: not-allowed; }
-    .btn-danger { background: #d63031; color: white; box-shadow: 0 4px 0 #a02020; }
-    .btn-shop { background: #0984e3; color: white; box-shadow: 0 3px 0 #065da8; padding: 8px 12px; font-size: 13px; }
-    .btn-shop:disabled { background: #b2bec3; box-shadow: 0 3px 0 #95a0a5; }
+/* ===== PANELS ===== */
+.panel{min-height:0;overflow-y:auto;padding:14px}
+.panel-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+.panel-head h2{font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px}
+.badge{
+  background:rgba(0,0,0,.06);border:1px solid var(--line);
+  border-radius:20px;padding:2px 8px;font-size:11px;font-weight:800;color:var(--muted);
+}
 
-    .ingredients { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 10px; max-width: 520px; }
-    .ing-btn {
-      width: 72px; height: 72px; font-size: 28px; background: white; border: 2px solid #dfe6e9;
-      border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; user-select: none; box-shadow: 0 4px 0 #b2bec3;
-    }
-    .ing-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #b2bec3; }
-    .ing-btn .name { font-size: 11px; color: #636e72; font-weight: 700; margin-top: 2px; }
-    .ing-btn.locked { opacity: .4; cursor: not-allowed; }
+/* ===== LEFT PANEL - CUSTOMERS ===== */
+.left-panel{
+  background:linear-gradient(180deg,#fff9e6,#f5e6b8);
+  border-right:1px solid rgba(0,0,0,.08);
+}
+.customer-list{display:flex;flex-direction:column;gap:8px}
 
-    /* Right panel */
-    .upgrade-group { background: white; border-radius: 12px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
-    .upgrade-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; display: flex; justify-content: space-between; }
-    .upgrade-desc { font-size: 12px; color: #636e72; margin-bottom: 6px; }
-    .upgrade-cost { font-weight: 800; color: #e17055; font-size: 13px; }
-    .upgrade-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .level-badge { font-size: 12px; background: #dfe6e9; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+.customer-card{
+  background:var(--panel);border:1px solid rgba(0,0,0,.06);
+  border-radius:var(--radius);padding:10px;
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+  transition:transform .15s,box-shadow .15s;
+  animation:cardSlide .3s ease-out both;
+}
+.customer-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.customer-card.active{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-glow)}
+.customer-card.vip{border-left:4px solid var(--gold)}
+.customer-card.student{border-left:4px solid var(--aqua)}
+.customer-card.critic{border-left:4px solid var(--danger)}
+.customer-card.regular{border-left:4px solid var(--mint)}
+@keyframes cardSlide{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
 
-    .notification {
-      position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-20px);
-      background: #2d3436; color: #ffeaa7; padding: 10px 20px; border-radius: 10px;
-      font-weight: 700; opacity: 0; pointer-events: none; transition: all .3s; z-index: 100;
-      box-shadow: 0 6px 18px rgba(0,0,0,.3);
-    }
-    .notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
- .notification.good { color: #55efc4; }
-    .notification.bad { color: #ff7675; }
+.c-header{display:flex;align-items:center;gap:8px}
+.c-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:#f3f4f6;display:grid;place-items:center;
+  font-size:22px;border:2px solid var(--line);flex-shrink:0;
+}
+.c-info{flex:1;min-width:0}
+.c-name{font-weight:800;font-size:13px;display:flex;align-items:center;gap:4px}
+.c-type{font-size:10px;color:var(--muted);font-weight:700;margin-top:1px}
+.c-price{font-weight:900;font-size:14px;color:var(--mint);flex-shrink:0}
 
-    .level-flash {
-      position: fixed; inset: 0; background: rgba(0,0,0,.6);
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none; transition: opacity .4s; z-index: 200;
-    }
-    .level-flash.active { opacity: 1; pointer-events: all; }
-    .level-card {
-      background: #ffeaa7; padding: 30px 40px; border-radius: 20px; text-align: center;
-      transform: scale(.8); transition: transform .4s cubic-bezier(.175,.885,.32,1.275);
-      box-shadow: 0 10px 30px rgba(0,0,0,.3);
-    }
-    .level-flash.active .level-card { transform: scale(1); }
-    .level-card h1 { font-size: 42px; color: #d63031; margin-bottom: 8px; }
-    .level-card p { font-size: 18px; color: #2d3436; font-weight: 700; }
+.c-order{
+  margin-top:7px;padding:7px;border-radius:var(--radius-sm);
+  background:#fffbeb;border:1px dashed rgba(180,140,40,.2);
+  display:flex;flex-wrap:wrap;gap:3px;align-items:center;
+}
+.mini-ing{
+  width:26px;height:26px;border-radius:6px;display:grid;place-items:center;
+  background:#fff;border:1px solid var(--line);font-size:16px;
+  transition:transform .1s;
+}
+.mini-ing:hover{transform:scale(1.15)}
 
-    /* Scrollbar polish */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); border-radius: 4px; }
+.c-note{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.3}
 
-    @media (max-width: 960px) {
-      main.panels { grid-template-columns: 220px 1fr 260px; }
-    }
-  </style>
+.patience-bar{
+  margin-top:7px;height:7px;background:#e5e7eb;
+  border-radius:99px;overflow:hidden;
+}
+.patience-fill{
+  height:100%;border-radius:inherit;
+  transition:width .25s linear,background-color .3s;
+}
+.patience-fill.high{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.patience-fill.mid{background:linear-gradient(90deg,#eab308,#f59e0b)}
+.patience-fill.low{background:linear-gradient(90deg,#ef4444,#dc2626)}
+
+.empty-queue{
+  text-align:center;padding:30px 12px;color:var(--muted);
+  font-weight:700;font-size:13px;
+  background:rgba(255,255,255,.3);border-radius:var(--radius);
+  border:1px dashed rgba(0,0,0,.12);
+}
+
+/* ===== CENTER PANEL - KITCHEN ===== */
+.center-panel{
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.6),rgba(255,255,255,.75)),
+    repeating-conic-gradient(#f8f5ee 0% 25%,#f3efe5 0% 50%) 0 0 / 30px 30px;
+  display:grid;grid-template-rows:auto 1fr auto;gap:10px;
+}
+.kitchen-header{display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap}
+.kitchen-pills{display:flex;flex-wrap:wrap;gap:5px}
+
+.station{
+  display:grid;grid-template-columns:minmax(200px,300px) 1fr;
+  gap:12px;min-height:0;align-items:stretch;
+}
+
+/* ===== BUILD ZONE ===== */
+.build-zone{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow-md);
+  display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;
+}
+.bz-head{
+  padding:10px 12px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+  font-weight:800;font-size:13px;
+}
+.plate-area{
+  display:flex;align-items:center;justify-content:center;
+  padding:16px 10px;min-height:0;overflow:hidden;
+  background:radial-gradient(ellipse at center bottom,rgba(0,0,0,.04),transparent 60%);
+}
+
+/* ===== BURGER 3D PREVIEW ===== */
+.burger-preview{
+  width:220px;min-height:280px;position:relative;
+  display:flex;flex-direction:column-reverse;
+  align-items:center;justify-content:flex-start;
+  perspective:600px;
+}
+.burger-preview.empty-plate::after{
+  content:'🍽️ Malzeme ekle';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);color:rgba(0,0,0,.25);
+  font-weight:800;font-size:13px;text-align:center;white-space:nowrap;
+}
+
+.layer{
+  position:relative;border-radius:var(--lr,999px);
+  width:var(--lw,180px);height:var(--lh,24px);
+  background:var(--lbg,#ccc);
+  margin-top:var(--lmt,-6px);
+  box-shadow:
+    inset 0 -4px 0 rgba(0,0,0,.1),
+    inset 0 2px 0 rgba(255,255,255,.15),
+    0 2px 4px rgba(0,0,0,.1);
+  display:grid;place-items:center;font-size:14px;
+  animation:layerBounce .35s cubic-bezier(.34,1.56,.64,1) both;
+  transform-style:preserve-3d;
+  transition:transform .2s;
+}
+.layer:hover{transform:scale(1.03) translateZ(4px)}
+@keyframes layerBounce{
+  from{opacity:0;transform:translateY(-30px) scale(.85)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Bun top special */
+.layer.bunTop{
+  border-radius:50% 50% 22px 22px;
+  background:linear-gradient(180deg,#d4892a,#c27a22);
+}
+.layer.bunTop::before{
+  content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:60%;height:45%;
+  background:radial-gradient(circle,rgba(255,255,255,.35) 2px,transparent 2px);
+  background-size:14px 12px;opacity:.7;
+}
+/* Bun bottom */
+.layer.bunBottom{
+  border-radius:18px 18px 40px 40px;
+  background:linear-gradient(180deg,#c8882e,#b5751f);
+}
+/* Patty */
+.layer.patty{
+  background:linear-gradient(180deg,#5c3317,#3d200d);
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.08),0 3px 6px rgba(0,0,0,.15);
+}
+.layer.patty::after{
+  content:'';position:absolute;inset:3px 8px;
+  background:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:8px 8px;border-radius:inherit;
+}
+/* Cheese */
+.layer.cheese{
+  background:linear-gradient(180deg,#ffd644,#f5c518);
+  border-radius:4px;
+}
+.layer.cheese::after{
+  content:'';position:absolute;bottom:-6px;left:10px;right:10px;height:8px;
+  background:linear-gradient(90deg,
+    transparent 0%,#ffd644 5%,#ffd644 15%,transparent 18%,
+    transparent 30%,#f5c518 33%,#f5c518 45%,transparent 48%,
+    transparent 60%,#ffd644 63%,#ffd644 78%,transparent 82%,
+    transparent 90%,#f5c518 93%,#f5c518 100%);
+  clip-path:polygon(0 0,8% 100%,16% 0,24% 100%,32% 0,40% 100%,48% 0,56% 100%,64% 0,72% 100%,80% 0,88% 100%,100% 0);
+}
+/* Lettuce */
+.layer.lettuce{
+  background:linear-gradient(180deg,#5bb847,#3d9130);
+  border-radius:8px 12px 6px 14px;
+}
+.layer.lettuce::after{
+  content:'';position:absolute;inset:2px 6px;
+  border:1px solid rgba(255,255,255,.15);border-radius:inherit;
+}
+/* Tomato */
+.layer.tomato{
+  background:linear-gradient(180deg,#e63b2e,#c42f24);
+  border-radius:999px;
+}
+.layer.tomato::after{
+  content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);
+  width:40%;height:3px;background:rgba(255,255,255,.2);border-radius:99px;
+}
+/* Onion */
+.layer.onion{
+  background:linear-gradient(180deg,#f0e6f4,#ddd0e2);
+  border-radius:999px;
+}
+.layer.onion::after{
+  content:'';position:absolute;inset:4px 20px;
+  border:2px solid rgba(200,180,210,.4);border-radius:50%;
+}
+/* Pickle */
+.layer.pickle{
+  background:linear-gradient(180deg,#6b9b3a,#537a2c);
+  border-radius:999px;
+}
+/* Sauce */
+.layer.sauce{
+  height:8px!important;border-radius:999px;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.08);
+}
+.layer.sauce.ketchup{background:linear-gradient(90deg,#d42b1e,#b8241a)}
+.layer.sauce.mustard{background:linear-gradient(90deg,#e8b912,#d4a50e)}
+.layer.sauce.hot{background:linear-gradient(90deg,#9b1c1c,#7f1d1d)}
+/* Premium */
+.layer.premium.bacon{
+  background:linear-gradient(90deg,#aa382d 0%,#c44a3f 30%,#f5ddd0 35%,#c44a3f 40%,#aa382d 100%);
+  border-radius:4px;
+}
+.layer.premium.mushroom{
+  background:linear-gradient(180deg,#d7b28f,#c49a72);
+  border-radius:50% 50% 8px 8px;
+}
+
+/* Cook quality badge */
+.cook-badge{
+  position:absolute;right:-4px;top:-6px;
+  width:20px;height:20px;border-radius:50%;
+  background:#111;color:#fff;font-size:10px;font-weight:900;
+  display:grid;place-items:center;border:2px solid #fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);z-index:2;
+}
+.cook-badge.perfect{background:var(--mint);color:#fff}
+.cook-badge.good{background:var(--gold);color:#000}
+.cook-badge.bad{background:var(--danger);color:#fff}
+
+/* Shadow under burger */
+.plate-shadow{
+  width:160px;height:12px;margin-top:4px;
+  background:radial-gradient(ellipse,rgba(0,0,0,.12),transparent 70%);
+  border-radius:50%;flex-shrink:0;
+}
+
+.bz-controls{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;
+  padding:10px;border-top:1px solid var(--line);
+}
+.btn{
+  min-height:40px;border-radius:var(--radius-sm);color:#fff;
+  font-weight:800;font-size:12px;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);
+  transition:transform .08s,filter .15s;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.btn:active:not(:disabled){transform:translateY(2px)}
+.btn.green{background:linear-gradient(180deg,#22c55e,#16a34a)}
+.btn.blue{background:linear-gradient(180deg,#0ea5e9,#0284c7)}
+.btn.red{background:linear-gradient(180deg,#ef4444,#dc2626)}
+.btn.orange{background:linear-gradient(180deg,#f97316,#ea580c)}
+.btn.dark{background:linear-gradient(180deg,#475569,#334155)}
+.btn.gold{background:linear-gradient(180deg,#eab308,#ca8a04)}
+
+/* ===== RIGHT SIDE OF STATION ===== */
+.right-station{display:grid;grid-template-rows:auto 1fr;gap:10px;min-height:0}
+
+.order-focus{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:10px;box-shadow:var(--shadow-sm);
+}
+.focus-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.focus-order{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px}
+.quality-row{
+  display:grid;grid-template-columns:60px 1fr 40px;gap:8px;align-items:center;
+  font-size:11px;font-weight:800;color:var(--muted);
+}
+.meter{height:8px;border-radius:99px;background:#e5e7eb;overflow:hidden}
+.meter-fill{
+  height:100%;border-radius:inherit;
+  background:linear-gradient(90deg,var(--danger),var(--gold),var(--mint));
+  transition:width .25s ease;
+}
+
+.prep-board{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:10px;box-shadow:var(--shadow-sm);
+  min-height:0;overflow-y:auto;
+}
+.ing-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+  gap:6px;margin-top:8px;
+}
+.ing-btn{
+  min-height:70px;padding:5px;border-radius:var(--radius-sm);
+  background:#fff;border:1px solid var(--line);
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.06),var(--shadow-sm);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:transform .1s,box-shadow .15s,border-color .15s;
+}
+.ing-btn:hover:not(:disabled){
+  transform:translateY(-2px);box-shadow:var(--shadow-md);
+  border-color:var(--brand);
+}
+.ing-btn:active:not(:disabled){transform:translateY(1px)}
+.ing-btn .emoji{font-size:24px}
+.ing-btn .iname{font-size:10px;font-weight:700;text-align:center;color:var(--ink);line-height:1.1}
+.ing-btn.locked{background:#f1f5f9;opacity:.6}
+.ing-btn.locked .iname{color:var(--muted)}
+
+/* ===== RIGHT PANEL - SHOP ===== */
+.right-panel{
+  background:linear-gradient(180deg,#ecfeff,#cffafe,#e0f7fa);
+  border-left:1px solid rgba(0,0,0,.06);
+}
+.tab-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px;
+}
+.tab-btn{
+  min-height:32px;border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.5);color:var(--muted);
+  font-weight:800;font-size:11px;border:1px solid var(--line);
+  transition:.15s;
+}
+.tab-btn.active{background:#334155;color:#fff;border-color:#334155}
+
+.shop-list{display:flex;flex-direction:column;gap:8px}
+.shop-card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:10px;box-shadow:var(--shadow-sm);
+}
+.shop-card header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.shop-card h3{font-size:13px;margin:0}
+.shop-card p{font-size:11px;color:var(--muted);margin:0 0 7px;line-height:1.3}
+.shop-action{display:flex;justify-content:space-between;align-items:center}
+.price-tag{font-weight:900;font-size:13px;color:var(--brand-dark)}
+.buy-btn{
+  min-height:32px;min-width:70px;border-radius:var(--radius-sm);
+  background:var(--brand);color:#fff;font-size:11px;font-weight:900;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.15);transition:.12s;
+}
+.buy-btn:hover:not(:disabled){filter:brightness(1.1)}
+
+.mission-card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:10px;box-shadow:var(--shadow-sm);
+}
+.mission-top{display:flex;justify-content:space-between;font-weight:800;font-size:12px;margin-bottom:5px}
+.progress-bar{height:7px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-bottom:4px}
+.progress-fill{height:100%;border-radius:inherit;background:var(--aqua);transition:width .3s}
+.mission-reward{font-size:10px;color:var(--muted)}
+
+.log-wrap{max-height:500px;overflow-y:auto}
+.log-entry{
+  font-size:11px;color:var(--muted);padding:5px 0;
+  border-bottom:1px solid var(--line);line-height:1.3;
+}
+
+/* ===== EVENT STRIP ===== */
+.event-strip{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:10px 12px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  box-shadow:var(--shadow-sm);
+}
+.event-info strong{font-size:13px;display:block}
+.event-info span{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+
+/* ===== TOAST ===== */
+.toast-container{
+  position:fixed;top:72px;left:50%;transform:translateX(-50%);
+  z-index:999;display:flex;flex-direction:column;gap:6px;
+  pointer-events:none;align-items:center;
+}
+.toast{
+  padding:10px 18px;border-radius:var(--radius-sm);
+  font-weight:800;font-size:13px;
+  box-shadow:var(--shadow-lg);
+  animation:toastIn .3s ease-out,toastOut .3s ease-in 2s forwards;
+  pointer-events:none;max-width:min(400px,90vw);text-align:center;
+}
+.toast.good{background:#065f46;color:#6ee7b7}
+.toast.bad{background:#7f1d1d;color:#fca5a5}
+.toast.gold{background:#713f12;color:#fde047}
+.toast.info{background:#1e3a5f;color:#93c5fd}
+@keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
+
+/* ===== MODAL ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  display:none;place-items:center;z-index:200;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.show{display:grid}
+.modal-box{
+  width:min(480px,100%);background:var(--paper);
+  border-radius:var(--radius);padding:24px;
+  box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.3);
+}
+.modal-box h2{font-size:24px;margin-bottom:6px}
+.modal-box p{color:var(--muted);font-size:13px;line-height:1.4;margin-bottom:14px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.summary-grid .s-stat{
+  background:#f8fafc;border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px;
+}
+.summary-grid .s-stat span{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.summary-grid .s-stat strong{display:block;font-size:18px;margin-top:2px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1100px){
+  .main-layout{grid-template-columns:250px 1fr}
+  .right-panel{display:none}
+}
+@media(max-width:768px){
+  body{overflow:auto}
+  .app{height:auto;min-height:100vh}
+  .topbar{position:sticky;top:0}
+  .main-layout{display:flex;flex-direction:column}
+  .panel{overflow:visible}
+  .station{grid-template-columns:1fr}
+  .right-panel{display:block}
+  .stats-row{justify-content:flex-start}
+  .burger-preview{width:180px;min-height:220px}
+}
+</style>
 </head>
 <body>
-  <div class="game-container">
-    <header>
-      <div class="logo">🍔 Burger Tycoon</div>
-      <div class="statbar">
-        <span>💰 <span id="money">100</span>₺</span>
-        <span>🎖️ Seviye <span id="level">1</span></span>
-        <span>🍔 <span id="burgers">0</span></span>
-        <span>❌ Kaçırılan: <span id="missed">0</span></span>
-        <span>📈 Kazanç: <span id="earned">0</span>₺</span>
+<div class="app">
+
+<!-- ===== TOP BAR ===== -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo">🍔</div>
+    <div><h1>Burger Tycoon</h1><small>Deluxe Edition</small></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-chip"><span class="label">💰 Para</span><span class="value money" id="sMoney">100₺</span></div>
+    <div class="stat-chip"><span class="label">⭐ Seviye</span><span class="value" id="sLevel">1</span></div>
+    <div class="stat-chip"><span class="label">❤️ İtibar</span><span class="value rep" id="sRep">50</span></div>
+    <div class="stat-chip"><span class="label">📅 Gün</span><span class="value" id="sDay">1</span></div>
+    <div class="stat-chip"><span class="label">🍔 Servis</span><span class="value" id="sServed">0</span></div>
+    <div class="stat-chip"><span class="label">🔥 Kombo</span><span class="value combo" id="sCombo">x1.0</span></div>
+    <div class="stat-chip"><span class="label">⏱ Süre</span><span class="value" id="sTimer">04:00</span></div>
+  </div>
+  <div class="top-btns">
+    <button class="icon-btn" id="btnPause" title="Duraklat">⏸</button>
+    <button class="icon-btn" id="btnSave" title="Kaydet">💾</button>
+    <button class="icon-btn" id="btnReset" title="Sıfırla">🔄</button>
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="main-layout">
+
+  <!-- LEFT: CUSTOMER QUEUE -->
+  <section class="panel left-panel">
+    <div class="panel-head">
+      <h2>👥 Müşteri Kuyruğu</h2>
+      <span class="badge" id="capBadge">0/3</span>
+    </div>
+    <div class="customer-list" id="customerList"></div>
+  </section>
+
+  <!-- CENTER: KITCHEN -->
+  <section class="panel center-panel">
+    <div class="kitchen-header">
+      <div>
+        <h2 style="font-size:16px">🍳 Mutfak Tezgahı</h2>
+        <span class="badge" id="selInfo" style="margin-top:4px;display:inline-block">Sipariş bekleniyor</span>
       </div>
-    </header>
-
-    <main class="panels">
-      <section class="panel left">
-        <h2>🧍 Müşteri Kuyruğu</h2>
-        <div id="customer-list"></div>
-      </section>
-
-      <section class="panel center">
-        <h2>👨‍🍳 Burger Yapımı</h2>
-        <div class="stage">
-          <div id="burger-stack">
-            <div class="empty-msg">Malzeme ekle...</div>
-          </div>
-          <div class="controls">
-            <button id="serve-btn" class="btn-primary" disabled>✅ Hazır</button>
-            <button id="clear-btn" class="btn-danger">🗑️ Çöp</button>
-          </div>
-          <div class="ingredients" id="ingredient-buttons"></div>
-        </div>
-      </section>
-
-      <section class="panel right" id="shop-panel">
-        <h2>🏗️ Geliştirmeler</h2>
-        <div class="upgrade-group">
-          <div class="upgrade-title">⚡ Hızlı Eller <span class="level-badge" id="lvl-hands">Seviye 0</span></div>
-          <div class="upgrade-desc">Müşterinin sabrı %10 daha yavaş azalır.</div>
-          <div class="upgrade-row">
-            <div class="upgrade-cost" id="cost-hands">50₺</div>
-            <button class="btn-shop" id="buy-hands" onclick="buyUpgrade('fastHands')">Satın Al</button>
-          </div>
-        </div>
-
-        <div class="upgrade-group">
-          <div class="upgrade-title">📢 Reklam <span class="level-badge" id="lvl-ad">Seviye 0</span></div>
-          <div class="upgrade-desc">Müşteriler daha sık gelir.</div>
-          <div class="upgrade-row">
-            <div class="upgrade-cost" id="cost-ad">200₺</div>
-            <button class="btn-shop" id="buy-ad" onclick="buyUpgrade('ad')">Satın Al</button>
-          </div>
-        </div>
-
-        <div class="upgrade-group">
-          <div class="upgrade-title">🤖 Oto-Kasiyer <span class="level-badge" id="lvl-auto">Seviye 0</span></div>
-          <div class="upgrade-desc">Saniyede otomatik para kazan.</div>
-          <div class="upgrade-row">
-            <div class="upgrade-cost" id="cost-auto">300₺</div>
-            <button class="btn-shop" id="buy-auto" onclick="buyUpgrade('autoCashier')">Satın Al</button>
-          </div>
-        </div>
-
-        <div class="upgrade-group">
-          <div class="upgrade-title">🏪 Dükkan Genişletme <span class="level-badge" id="lvl-shop">Seviye 0</span></div>
-          <div class="upgrade-desc">Aynı anda daha fazla müşteri.</div>
-          <div class="upgrade-row">
-            <div class="upgrade-cost" id="cost-shop">500₺</div>
-            <button class="btn-shop" id="buy-shop" onclick="buyUpgrade('shopSize')">Satın Al</button>
-          </div>
-        </div>
-
-        <h2 style="margin-top:16px">🔓 Yeni Malzemeler</h2>
-        <div id="ingredient-shop"></div>
-      </section>
-    </main>
-
-    <div class="notification" id="notification"></div>
-
-    <div class="level-flash" id="level-flash">
-      <div class="level-card">
-        <h1>🎉 Seviye Atladın!</h1>
-        <p id="level-text">Seviye 2 oldun!</p>
+      <div class="kitchen-pills">
+        <span class="badge" id="pillWeather">☀️ Normal</span>
+        <span class="badge" id="pillRush">Sakin</span>
+        <span class="badge" id="pillCombo">Kombo yap!</span>
       </div>
     </div>
+
+    <div class="station">
+      <!-- BUILD ZONE -->
+      <div class="build-zone">
+        <div class="bz-head">
+          <span>🍔 Aktif Burger</span>
+          <span class="badge" id="burgerVal">0₺</span>
+        </div>
+        <div class="plate-area">
+          <div class="burger-preview empty-plate" id="burgerPreview">
+            <div class="plate-shadow"></div>
+          </div>
+        </div>
+        <div class="bz-controls">
+          <button class="btn green" id="btnServe" disabled>✅ Servis</button>
+          <button class="btn blue" id="btnUndo" disabled>↩ Geri</button>
+          <button class="btn red" id="btnClear">🗑 Temizle</button>
+        </div>
+      </div>
+
+      <!-- RIGHT STATION -->
+      <div class="right-station">
+        <div class="order-focus">
+          <div class="focus-top">
+            <h2 style="font-size:14px">📋 Aktif Sipariş</h2>
+            <span class="badge" id="targetPrice">0₺</span>
+          </div>
+          <div class="focus-order" id="focusOrder"><span class="badge">Sipariş bekleniyor</span></div>
+          <div class="quality-row">
+            <span>Uyum</span>
+            <div class="meter"><div class="meter-fill" id="qualityFill" style="width:0%"></div></div>
+            <strong id="qualityText">0%</strong>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:6px">
+            <button class="btn gold" id="btnAuto" disabled style="flex:1;font-size:11px">👨‍🍳 Usta Şef</button>
+          </div>
+        </div>
+
+        <div class="prep-board">
+          <div class="panel-head" style="margin-bottom:6px">
+            <h2 style="font-size:14px">🧂 Malzemeler</h2>
+          </div>
+          <div class="ing-grid" id="ingGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="event-strip">
+      <div class="event-info">
+        <strong id="evTitle">Vardiya başladı</strong>
+        <span id="evText">Müşteriler birazdan gelir. Hızlı ve doğru servis yap!</span>
+      </div>
+      <button class="btn orange" id="btnNextDay" hidden style="font-size:12px;padding:0 14px">Sonraki Gün ▶</button>
+    </div>
+  </section>
+
+  <!-- RIGHT: SHOP -->
+  <section class="panel right-panel">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="upgrades">🔧 Ekipman</button>
+      <button class="tab-btn" data-tab="menu">🧾 Menü</button>
+      <button class="tab-btn" data-tab="missions">🎯 Görev</button>
+      <button class="tab-btn" data-tab="log">📜 Kayıt</button>
+    </div>
+    <div class="shop-list" id="shopContent"></div>
+  </section>
+
+</main>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastBox"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="dayModal">
+  <div class="modal-box">
+    <h2 id="modalTitle">Gün Bitti</h2>
+    <p id="modalText">Bugünün özeti.</p>
+    <div class="summary-grid">
+      <div class="s-stat"><span>Kazanç</span><strong id="sumEarned">0₺</strong></div>
+      <div class="s-stat"><span>Servis</span><strong id="sumServed">0</strong></div>
+      <div class="s-stat"><span>Kaçan</span><strong id="sumMissed">0</strong></div>
+      <div class="s-stat"><span>İtibar</span><strong id="sumRep">50</strong></div>
+    </div>
+    <button class="btn orange" id="btnModalNext" style="width:100%;font-size:14px;min-height:44px">🌅 Yeni Güne Başla</button>
   </div>
+</div>
 
-  <script>
-    /* ===== DATA & CONFIG ===== */
-    const INGREDIENTS = [
-      {id:'ekmek', emoji:'🍞', name:'Ekmek', unlockCost:0, levelReq:1},
-      {id:'et', emoji:'🥩', name:'Et', unlockCost:0, levelReq:1},
-      {id:'peynir', emoji:'🧀', name:'Peynir', unlockCost:60, levelReq:1},
-      {id:'marul', emoji:'🥬', name:'Marul', unlockCost:80, levelReq:1},
-      {id:'domates', emoji:'🍅', name:'Domates', unlockCost:120, levelReq:2},
-      {id:'sogan', emoji:'🧅', name:'Soğan', unlockCost:180, levelReq:2},
-      {id:'tursu', emoji:'🥒', name:'Turşu', unlockCost:220, levelReq:3},
-      {id:'hardal', emoji:'🟡', name:'Hardal', unlockCost:260, levelReq:3},
-      {id:'ketcap', emoji:'🔴', name:'Ketçap', unlockCost:260, levelReq:4},
-    ];
+<script>
+// ==========================================================
+// ===== BURGER TYCOON DELUXE - GAME ENGINE =================
+// ==========================================================
 
-    const UPGRADE_COSTS = {
-      fastHands: [50,150,400,1000,2500,6000,15000,40000,100000,250000],
-      ad: [200,500,1500,5000,20000],
-      autoCashier: [300,1000,3000,10000,50000],
-      shopSize: [500,1500,5000,20000,100000]
-    };
+// ===== INGREDIENT DEFINITIONS =====
+const INGREDIENTS = [
+  {id:"bunBottom",icon:"🥯",name:"Alt Ekmek",price:4,unlocked:true,type:"bunBottom",
+   bg:"#c8882e",w:195,h:34,r:"18px 18px 42px 42px",orderable:true},
+  {id:"bunTop",icon:"🍞",name:"Üst Ekmek",price:4,unlocked:true,type:"bunTop",
+   bg:"#e8ad55",w:195,h:44,orderable:true},
+  {id:"pattyBeef",icon:"🥩",name:"Dana Köfte",price:12,unlocked:true,type:"patty",
+   bg:"#5c3317",w:182,h:28,cookable:true,orderable:true},
+  {id:"pattyChicken",icon:"🍗",name:"Tavuk",price:10,unlockCost:220,level:2,type:"patty",
+   bg:"#c98d55",w:178,h:26,cookable:true,orderable:true},
+  {id:"cheese",icon:"🧀",name:"Peynir",price:5,unlockCost:70,level:1,type:"cheese",
+   bg:"#ffd644",w:188,h:18,orderable:true},
+  {id:"lettuce",icon:"🥬",name:"Marul",price:4,unlockCost:90,level:1,type:"lettuce",
+   bg:"#5bb847",w:192,h:18,orderable:true},
+  {id:"tomato",icon:"🍅",name:"Domates",price:4,unlockCost:140,level:2,type:"tomato",
+   bg:"#e63b2e",w:174,h:17,orderable:true},
+  {id:"onion",icon:"🧅",name:"Soğan",price:3,unlockCost:180,level:2,type:"onion",
+   bg:"#f0e6f4",w:166,h:15,orderable:true},
+  {id:"pickle",icon:"🥒",name:"Turşu",price:4,unlockCost:260,level:3,type:"pickle",
+   bg:"#6b9b3a",w:154,h:15,orderable:true},
+  {id:"ketchup",icon:"🔴",name:"Ketçap",price:3,unlockCost:330,level:3,type:"sauce",
+   bg:"#d42b1e",w:164,h:10,sauceClass:"ketchup",orderable:true},
+  {id:"mustard",icon:"🟡",name:"Hardal",price:3,unlockCost:380,level:4,type:"sauce",
+   bg:"#e8b912",w:164,h:10,sauceClass:"mustard",orderable:true},
+  {id:"bacon",icon:"🥓",name:"Pastırma",price:14,unlockCost:650,level:5,type:"premium",
+   bg:"#aa382d",w:176,h:20,premiumClass:"bacon",orderable:true},
+  {id:"mushroom",icon:"🍄",name:"Mantar",price:6,unlockCost:780,level:6,type:"premium",
+   bg:"#d7b28f",w:160,h:18,premiumClass:"mushroom",orderable:true},
+  {id:"hotSauce",icon:"🌶️",name:"Acı Sos",price:5,unlockCost:900,level:7,type:"sauce",
+   bg:"#9b1c1c",w:160,h:10,sauceClass:"hot",orderable:true}
+];
 
-    const AUTO_INCOME = [0, 1, 3, 10, 50, 300]; // per level per second
-    const MAX_CUSTOMERS_BASE = [1,2,3,5,8,12]; // per shopSize level
+// ===== UPGRADE DEFINITIONS =====
+const UPGRADES = {
+  grill:{name:"Izgara Ustası",icon:"🔥",desc:"Köfteler daha iyi pişer, kalite artar.",
+    costs:[120,420,1300,4200,12500]},
+  patience:{name:"Rahat Bekleme",icon:"🪑",desc:"Müşteri sabrı ve bahşiş şansı artar.",
+    costs:[90,330,1100,3600,9800]},
+  marketing:{name:"Sokak Reklamı",icon:"📢",desc:"Daha sık müşteri gelir.",
+    costs:[160,520,1600,5400,16000]},
+  capacity:{name:"Dükkan Genişlet",icon:"🏪",desc:"Aynı anda daha fazla müşteri.",
+    costs:[260,850,2500,7200,18000]},
+  assistant:{name:"Usta Şef",icon:"👨‍🍳",desc:"Siparişi tek tuşla doğru hazırlar.",
+    costs:[520,1800,6000]},
+  accountant:{name:"Oto Kasa",icon:"🤖",desc:"Her saniye pasif gelir üretir.",
+    costs:[300,950,3100,9300,22000]}
+};
 
-    const AVATARS = ['👨','👩','🧑','👴','👵','🧓','👱‍♂️','👱‍♀️'];
+// ===== CUSTOMER TYPES =====
+const CTYPES = [
+  {key:"regular",label:"Mahalleli",avatars:["👩","👨","🧑","👵","👴"],
+   patience:1,pay:1,tip:.16,note:"Klasik burger sever."},
+  {key:"student",label:"Öğrenci",avatars:["🧑‍🎓","👩‍🎓","🧒"],
+   patience:.88,pay:.92,tip:.08,note:"Hızlı ve ucuz ister."},
+  {key:"vip",label:"VIP",avatars:["🕴️","👑","💎"],
+   patience:1.2,pay:1.55,tip:.34,note:"Kusursuz servis büyük bahşiş bırakır."},
+  {key:"critic",label:"Eleştirmen",avatars:["🧐","📝","🎩"],
+   patience:1.05,pay:1.2,tip:.22,note:"Yanlış sipariş itibarı düşürür."}
+];
 
-    let GAME = {
-      money: 100,
-      level: 1,
-      burgersMade: 0,
-      missedCustomers: 0,
-      totalEarned: 0,
-      unlockedIngredients: ['ekmek','et'],
-      customers: [],
-      currentBurger: [],
-      upgrades: { fastHands:0, ad:0, autoCashier:0, shopSize:0 },
-      lastSpawn: 0,
-      lastTick: performance.now(),
-      gameActive: true    };
+// ===== DAY EVENTS =====
+const EVENTS = [
+  {title:"Normal Gün",text:"Dengeli bir akış. Fırsatları değerlendir.",spawn:1,pay:1,icon:"☀️"},
+  {title:"Öğle Telaşı",text:"Siparişler sıklaşır, kombo için ideal.",spawn:.7,pay:1.08,icon:"⏱️"},
+  {title:"Festival",text:"Çok müşteri, yüksek kazanç.",spawn:.55,pay:1.18,icon:"🎪"},
+  {title:"Yağmurlu Akşam",text:"Az müşteri ama sabırlılar.",spawn:1.3,pay:1.12,patience:1.2,icon:"🌧️"},
+  {title:"Gurme Turu",text:"Eleştirmen gelme ihtimali yüksek!",spawn:.85,pay:1.28,critic:true,icon:"⭐"}
+];
 
-    /* ===== DOM REFS ===== */
-    const els = {
-      money: document.getElementById('money'),
-      level: document.getElementById('level'),
-      burgers: document.getElementById('burgers'),
-      missed: document.getElementById('missed'),
-      earned: document.getElementById('earned'),
-      customerList: document.getElementById('customer-list'),
-      burgerStack: document.getElementById('burger-stack'),
-      serveBtn: document.getElementById('serve-btn'),
-      clearBtn: document.getElementById('clear-btn'),
-      ingredientButtons: document.getElementById('ingredient-buttons'),
-      ingredientShop: document.getElementById('ingredient-shop'),
-      notification: document.getElementById('notification'),
-      levelFlash: document.getElementById('level-flash'),
-      levelText: document.getElementById('level-text'),
-      buyHands: document.getElementById('buy-hands'),
-      buyAd: document.getElementById('buy-ad'),
-      buyAuto: document.getElementById('buy-auto'),
-      buyShop: document.getElementById('buy-shop'),
-      costHands: document.getElementById('cost-hands'),
-      costAd: document.getElementById('cost-ad'),
-      costAuto: document.getElementById('cost-auto'),
-      costShop: document.getElementById('cost-shop'),
-      lvlHands: document.getElementById('lvl-hands'),
-      lvlAd: document.getElementById('lvl-ad'),
-      lvlAuto: document.getElementById('lvl-auto'),
-      lvlShop: document.getElementById('lvl-shop'),
-    };
+// ===== MISSIONS =====
+const MISSIONS = [
+  {id:"serve5",title:"5 kusursuz servis",target:5,reward:120,field:"perfect"},
+  {id:"combo4",title:"x4 kombo yap",target:4,reward:180,field:"bestCombo"},
+  {id:"earn600",title:"600₺ kazan",target:600,reward:220,field:"totalEarned"},
+  {id:"unlock6",title:"6 malzeme aç",target:6,reward:260,field:"_unlockCount"},
+  {id:"rep80",title:"80 itibar",target:80,reward:320,field:"reputation"},
+  {id:"serve20",title:"20 burger servis et",target:20,reward:400,field:"served"},
+  {id:"earn2000",title:"2000₺ toplam kazan",target:2000,reward:500,field:"totalEarned"},
+  {id:"combo8",title:"x8 kombo yap",target:8,reward:600,field:"bestCombo"}
+];
 
-    /* ===== CORE FUNCTIONS ===== */
-    function init() {
-      renderIngredientButtons();
-      renderIngredientShop();
-      updateUI();
-      requestAnimationFrame(gameLoop);
-      setInterval(autoCashierTick, 1000);
+const NAMES = ["Deniz","Ece","Mert","Selin","Ali","Zeynep","Can","Ada","Bora","Mina",
+  "Yusuf","Elif","Cem","Aylin","Kemal","Defne","Ozan","Nisa","Kaan","Sude"];
+
+// ===== GAME STATE =====
+function createDefault(){
+  return {
+    money:100,level:1,xp:0,reputation:50,
+    day:1,dayLength:240,dayTime:240,
+    paused:false,dayEnded:false,
+    eventIdx:0,
+    customers:[],burger:[],
+    served:0,missed:0,totalEarned:0,
+    combo:0,bestCombo:0,perfect:0,mistakes:0,
+    dayStats:{earned:0,served:0,missed:0},
+    upgrades:Object.fromEntries(Object.keys(UPGRADES).map(k=>[k,0])),
+    unlocked:INGREDIENTS.filter(i=>i.unlocked).map(i=>i.id),
+    claimed:[],
+    log:["🏪 Dükkan açıldı! İlk müşteriler yolda."],
+    nextCustId:1
+  };
+}
+
+let G = loadSave() || createDefault();
+normalizeState();
+
+let activeTab = "upgrades";
+let lastTick = performance.now();
+let spawnTimer = 0;
+let passiveTimer = 0;
+let renderTimer = 0;
+let saveTimer = 0;
+
+// ===== DOM CACHE =====
+const $ = id => document.getElementById(id);
+const DOM = {
+  sMoney:$("sMoney"),sLevel:$("sLevel"),sRep:$("sRep"),sDay:$("sDay"),
+  sServed:$("sServed"),sCombo:$("sCombo"),sTimer:$("sTimer"),
+  capBadge:$("capBadge"),customerList:$("customerList"),
+  selInfo:$("selInfo"),pillWeather:$("pillWeather"),pillRush:$("pillRush"),pillCombo:$("pillCombo"),
+  burgerPreview:$("burgerPreview"),burgerVal:$("burgerVal"),
+  btnServe:$("btnServe"),btnUndo:$("btnUndo"),btnClear:$("btnClear"),
+  focusOrder:$("focusOrder"),targetPrice:$("targetPrice"),
+  qualityFill:$("qualityFill"),qualityText:$("qualityText"),
+  btnAuto:$("btnAuto"),ingGrid:$("ingGrid"),
+  shopContent:$("shopContent"),toastBox:$("toastBox"),
+  evTitle:$("evTitle"),evText:$("evText"),btnNextDay:$("btnNextDay"),
+  dayModal:$("dayModal"),modalTitle:$("modalTitle"),modalText:$("modalText"),
+  sumEarned:$("sumEarned"),sumServed:$("sumServed"),sumMissed:$("sumMissed"),sumRep:$("sumRep"),
+  btnModalNext:$("btnModalNext"),btnPause:$("btnPause")
+};
+
+// ===== HELPERS =====
+function fmt(n){return Math.floor(n).toLocaleString("tr-TR")+"₺"}
+function ing(id){return INGREDIENTS.find(i=>i.id===id)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function evt(){return EVENTS[G.eventIdx]||EVENTS[0]}
+function maxCust(){return 3+G.upgrades.capacity}
+function spawnInterval(){
+  const e=evt(),m=Math.pow(.84,G.upgrades.marketing);
+  const r=Math.max(.72,1-(G.reputation-50)*.004);
+  return Math.max(500,3600*(e.spawn||1)*m*r);
+}
+function custPatience(type){
+  const e=evt();
+  return 100*type.patience*(e.patience||1)*(1+G.upgrades.patience*.13);
+}
+
+// ===== NORMALIZE / SAVE / LOAD =====
+function normalizeState(){
+  const d=createDefault();
+  for(let k in d) if(!(k in G)) G[k]=d[k];
+  if(!G.upgrades) G.upgrades={};
+  for(let k in d.upgrades) if(!(k in G.upgrades)) G.upgrades[k]=0;
+  if(!G.dayStats) G.dayStats={earned:0,served:0,missed:0};
+  if(!Array.isArray(G.customers)) G.customers=[];
+  if(!Array.isArray(G.burger)) G.burger=[];
+  if(!Array.isArray(G.unlocked)||!G.unlocked.length) G.unlocked=d.unlocked;
+  if(!Array.isArray(G.claimed)) G.claimed=[];
+  if(!Array.isArray(G.log)) G.log=d.log;
+  if(!G.nextCustId) G.nextCustId=1;
+  // Recompute patience maxes if missing
+  G.customers.forEach(c=>{if(!c.maxPatience)c.maxPatience=c.patience||80});
+}
+
+function saveGame(){
+  try{localStorage.setItem("burgerTycoonDX",JSON.stringify(G))}catch(e){}
+}
+function loadSave(){
+  try{const r=localStorage.getItem("burgerTycoonDX");return r?JSON.parse(r):null}catch(e){return null}
+}
+function resetGame(){
+  if(!confirm("Tüm ilerleme silinecek. Emin misin?"))return;
+  localStorage.removeItem("burgerTycoonDX");
+  G=createDefault();toast("Yeni oyun başladı!","info");fullRender();
+}
+
+// ===== TOAST =====
+function toast(text,type="good"){
+  const t=document.createElement("div");
+  t.className=`toast ${type}`;t.textContent=text;
+  DOM.toastBox.appendChild(t);
+  setTimeout(()=>{if(t.parentNode)t.remove()},2500);
+}
+
+// ===== CUSTOMER GENERATION =====
+function genOrder(type){
+  const order=["bunBottom"];
+  const meats=["pattyBeef","pattyChicken","bacon"].filter(id=>G.unlocked.includes(id));
+  order.push(pick(meats.length?meats:["pattyBeef"]));
+  const extras=INGREDIENTS.filter(i=>
+    G.unlocked.includes(i.id)&&i.orderable&&
+    !["bunBottom","bunTop","pattyBeef","pattyChicken","bacon"].includes(i.id)
+  ).map(i=>i.id);
+  const maxE=Math.min(extras.length,rand(1,Math.min(4+Math.floor(G.level/3),extras.length||1)));
+  const shuffled=[...extras].sort(()=>Math.random()-.5);
+  for(let i=0;i<maxE;i++) order.push(shuffled[i]);
+  if(type.key==="vip"&&G.unlocked.includes("bacon")&&!order.includes("bacon")) order.splice(2,0,"bacon");
+  if(type.key==="student"&&order.length>5) order.splice(3,1);
+  order.push("bunTop");
+  return order;
+}
+
+function spawnCustomer(){
+  if(G.dayEnded||G.paused||G.customers.length>=maxCust())return;
+  const e=evt();
+  let type=pick(CTYPES);
+  if(e.critic&&Math.random()<.4) type=CTYPES.find(t=>t.key==="critic");
+  if(G.level<3&&type.key==="critic") type=CTYPES[0];
+
+  const order=genOrder(type);
+  const basePrice=order.reduce((s,id)=>s+ing(id).price,18);
+  const c={
+    id:G.nextCustId++,
+    name:pick(NAMES),avatar:pick(type.avatars),
+    type:type.key,typeLabel:type.label,note:type.note,
+    pay:type.pay,tipChance:type.tip,
+    order,price:Math.round(basePrice*type.pay*(e.pay||1)),
+    patience:custPatience(type),maxPatience:custPatience(type)
+  };
+  G.customers.push(c);
+  G.log.unshift(`${c.avatar} ${c.name} geldi (${c.typeLabel}).`);
+  renderCustomers();
+}
+
+// ===== BURGER BUILDING =====
+function addIng(id){
+  if(G.paused||G.dayEnded||!G.unlocked.includes(id))return;
+  if(!G.customers.length){toast("Önce müşteri gelsin!","bad");return}
+  if(G.burger.length>=12){toast("Burger çok yüksek!","bad");return}
+  const i=ing(id);
+  const cooked=i.cookable?cookQual():null;
+  G.burger.push({id,cooked});
+  renderBurger();renderQuality();
+}
+
+function cookQual(){
+  const base=68+G.upgrades.grill*6.5;
+  return Math.max(40,Math.min(100,Math.round(base+rand(-14,20))));
+}
+
+function undoIng(){
+  if(!G.burger.length)return;
+  G.burger.pop();renderBurger();renderQuality();
+}
+
+function clearBurger(){
+  G.burger=[];renderBurger();renderQuality();
+}
+
+// ===== SCORING =====
+function scoreOrder(order,built){
+  if(!order.length||!built.length)return 0;
+  let posMatch=0;
+  order.forEach((id,i)=>{if(built[i]===id)posMatch++});
+  const counts={};
+  order.forEach(id=>counts[id]=(counts[id]||0)+1);
+  let ingMatch=0;
+  built.forEach(id=>{if(counts[id]>0){counts[id]--;ingMatch++}});
+  const recipe=(ingMatch/Math.max(order.length,built.length))*70;
+  const pos=(posMatch/order.length)*20;
+  const cooks=G.burger.filter(x=>x.cooked!==null);
+  const cook=cooks.length?cooks.reduce((s,x)=>s+x.cooked,0)/cooks.length*.1:10;
+  return Math.round(Math.max(0,Math.min(100,recipe+pos+cook)));
+}
+
+// ===== SERVE =====
+function serveBurger(){
+  if(!G.customers.length||!G.burger.length||G.dayEnded||G.paused)return;
+  const target=G.customers[0];
+  const builtIds=G.burger.map(x=>x.id);
+  const quality=scoreOrder(target.order,builtIds);
+  const pPct=target.patience/target.maxPatience;
+  const perfect=quality>=92;
+  const good=quality>=74;
+
+  let earned=Math.round(target.price*(quality/100));
+  let tip=0;
+
+  if(perfect){
+    G.combo++;G.perfect++;
+    G.bestCombo=Math.max(G.bestCombo,G.combo);
+    const comboMult=Math.min(.8,G.combo*.09);
+    if(Math.random()<target.tipChance+pPct*.2)
+      tip=Math.round(target.price*(.15+comboMult));
+    earned+=tip;
+    G.reputation=Math.min(100,G.reputation+(target.type==="critic"?6:2));
+    gainXP(20+target.order.length*2);
+    toast(`🌟 Kusursuz! +${fmt(earned)}${tip?" (bahşiş dahil)":""}`,  "gold");
+  } else if(good){
+    G.combo=Math.max(0,G.combo-1);
+    G.reputation=Math.min(100,G.reputation+1);
+    gainXP(12+target.order.length);
+    toast(`✅ İyi servis! +${fmt(earned)}`,"good");
+  } else {
+    G.combo=0;G.mistakes++;
+    earned=Math.max(3,Math.round(target.price*.35));
+    G.reputation=Math.max(0,G.reputation-(target.type==="critic"?10:4));
+    gainXP(4);
+    toast(`❌ Sipariş tutmadı. Sadece +${fmt(earned)}`,"bad");
+  }
+
+  G.money+=earned;G.totalEarned+=earned;
+  G.dayStats.earned+=earned;G.dayStats.served++;G.served++;
+  G.customers.shift();G.burger=[];
+  G.log.unshift(`${target.avatar} ${target.name}: %${quality} kalite, +${fmt(earned)}`);
+  checkMissions();
+  renderCustomers();renderBurger();renderQuality();updateHeader();
+}
+
+// ===== XP / LEVEL =====
+function gainXP(amount){
+  G.xp+=amount;
+  let need=80+G.level*35;
+  while(G.xp>=need){
+    G.xp-=need;G.level++;
+    const bonus=G.level*50;
+    G.money+=bonus;G.totalEarned+=bonus;
+    G.log.unshift(`⭐ Seviye ${G.level}! +${fmt(bonus)} bonus!`);
+    toast(`⭐ Seviye ${G.level}! Bonus ${fmt(bonus)}`,"gold");
+    need=80+G.level*35;
+  }
+}
+
+// ===== MISSED CUSTOMER =====
+function missCustomer(idx){
+  const c=G.customers[idx];
+  G.customers.splice(idx,1);
+  G.missed++;G.dayStats.missed++;G.combo=0;
+  G.reputation=Math.max(0,G.reputation-(c.type==="critic"?9:3));
+  G.log.unshift(`😤 ${c.name} gitti! İtibar düştü.`);
+  toast(`${c.name} beklemekten vazgeçti!`,"bad");
+}
+
+// ===== AUTO BUILD =====
+function autoBuild(){
+  const lv=G.upgrades.assistant;
+  if(!lv||!G.customers.length)return;
+  const cost=Math.max(5,28-lv*6);
+  if(G.money<cost){toast("Usta ücreti için para yetmiyor!","bad");return}
+  G.money-=cost;
+  G.burger=G.customers[0].order.map(id=>{
+    const i=ing(id);
+    return{id,cooked:i.cookable?Math.min(100,84+lv*5+rand(-3,5)):null};
+  });
+  toast(`👨‍🍳 Usta hazırladı! Ücret ${fmt(cost)}`,"info");
+  renderBurger();renderQuality();
+}
+
+// ===== UPGRADES =====
+function buyUpgrade(key){
+  const up=UPGRADES[key],lv=G.upgrades[key];
+  if(!up||lv>=up.costs.length)return;
+  const cost=up.costs[lv];
+  if(G.money<cost){toast("Para yetmiyor!","bad");return}
+  G.money-=cost;G.upgrades[key]++;
+  G.log.unshift(`🔧 ${up.name} → Sv.${G.upgrades[key]}`);
+  toast(`${up.icon} ${up.name} geliştirildi!`,"good");
+  updateHeader();renderShop();
+}
+
+function unlockIng(id){
+  const i=ing(id);
+  if(!i||G.unlocked.includes(id))return;
+  if(G.level<(i.level||1)){toast(`Seviye ${i.level} gerekli!`,"bad");return}
+  if(G.money<i.unlockCost){toast("Para yetmiyor!","bad");return}
+  G.money-=i.unlockCost;G.unlocked.push(id);
+  G.log.unshift(`🆕 ${i.name} menüye eklendi!`);
+  toast(`${i.icon} ${i.name} açıldı!`,"gold");
+  checkMissions();renderIngredients();renderShop();updateHeader();
+}
+
+// ===== MISSIONS =====
+function checkMissions(){
+  MISSIONS.forEach(m=>{
+    if(G.claimed.includes(m.id))return;
+    let val;
+    if(m.field==="_unlockCount") val=G.unlocked.length;
+    else val=G[m.field]||0;
+    if(val>=m.target){
+      G.claimed.push(m.id);
+      G.money+=m.reward;G.totalEarned+=m.reward;
+      G.log.unshift(`🎯 Görev: ${m.title} → +${fmt(m.reward)}`);
+      toast(`🎯 ${m.title} tamamlandı! +${fmt(m.reward)}`,"gold");
     }
+  });
+}
 
-    function getMaxCustomers() {
-      return MAX_CUSTOMERS_BASE[Math.min(GAME.upgrades.shopSize, MAX_CUSTOMERS_BASE.length-1)];
-    }
+// ===== DAY SYSTEM =====
+function endDay(){
+  if(G.dayEnded)return;
+  G.dayEnded=true;G.customers=[];G.burger=[];
+  const bonus=Math.max(0,Math.round((G.reputation-50)*2+G.dayStats.served*8-G.dayStats.missed*12));
+  G.money+=bonus;G.totalEarned+=bonus;
+  DOM.modalTitle.textContent=`📅 Gün ${G.day} Bitti`;
+  DOM.modalText.textContent=bonus>0?
+    `İtibar ve servis bonusu: +${fmt(bonus)}`:"Bugün bonus çıkmadı. Yarın toparlarız!";
+  DOM.sumEarned.textContent=fmt(G.dayStats.earned+bonus);
+  DOM.sumServed.textContent=G.dayStats.served;
+  DOM.sumMissed.textContent=G.dayStats.missed;
+  DOM.sumRep.textContent=G.reputation;
+  DOM.dayModal.classList.add("show");
+  DOM.btnNextDay.hidden=false;
+  G.log.unshift(`📅 Gün ${G.day} sonu. Kazanç: ${fmt(G.dayStats.earned+bonus)}`);
+  saveGame();fullRender();
+}
 
-    function getMaxPatience() {
-      return 100 * (1 + 0.06 * GAME.upgrades.fastHands);
-    }
+function nextDay(){
+  G.day++;
+  G.dayTime=Math.max(180,240-Math.min(60,G.day*2));
+  G.dayEnded=false;G.paused=false;
+  G.eventIdx=rand(0,EVENTS.length-1);
+  G.dayStats={earned:0,served:0,missed:0};
+  spawnTimer=0;
+  DOM.dayModal.classList.remove("show");
+  DOM.btnNextDay.hidden=true;
+  toast(`🌅 Gün ${G.day}: ${evt().title}`,"gold");
+  saveGame();fullRender();
+}
 
-    function getSpawnInterval() {
-      return Math.max(600, 3000 * Math.pow(0.72, GAME.upgrades.ad));
-    }
+// ===== PASSIVE INCOME =====
+function passiveIncome(){
+  const inc=G.upgrades.accountant*(2+G.level);
+  if(inc>0&&!G.paused&&!G.dayEnded){
+    G.money+=inc;G.totalEarned+=inc;G.dayStats.earned+=inc;
+  }
+}
 
-    function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+// ===== RENDERING =====
+function updateHeader(){
+  DOM.sMoney.textContent=fmt(G.money);
+  DOM.sLevel.textContent=`${G.level} (${G.xp}/${80+G.level*35}xp)`;
+  DOM.sRep.textContent=G.reputation;
+  DOM.sDay.textContent=G.day;
+  DOM.sServed.textContent=G.served;
+  const comboVal=(1+Math.min(.8,G.combo*.09)).toFixed(1);
+  DOM.sCombo.textContent=`x${comboVal}`;
+  const m=String(Math.floor(Math.max(0,G.dayTime)/60)).padStart(2,"0");
+  const s=String(Math.floor(Math.max(0,G.dayTime)%60)).padStart(2,"0");
+  DOM.sTimer.textContent=`${m}:${s}`;
+  DOM.capBadge.textContent=`${G.customers.length}/${maxCust()}`;
+  const e=evt();
+  DOM.pillWeather.textContent=`${e.icon} ${e.title}`;
+  const interval=spawnInterval();
+  DOM.pillRush.textContent=interval<1200?"🔥 Çılgın":interval<2200?"⚡ Yoğun":"☕ Sakin";
+  DOM.pillCombo.textContent=G.combo?`🔥 ${G.combo} üst üste!`:"Kombo yap!";
+  DOM.evTitle.textContent=e.title;
+  DOM.evText.textContent=e.text;
+  DOM.btnPause.textContent=G.paused?"▶️":"⏸";
+  DOM.selInfo.textContent=G.customers.length?
+    `${G.customers[0].avatar} ${G.customers[0].name} için hazırlanıyor`:"Sipariş bekleniyor";
+}
 
-    function showNotification(text, isGood=true) {
-      els.notification.textContent = text;
-      els.notification.className = 'notification show ' + (isGood?'good':'bad');
-      setTimeout(()=> els.notification.className='notification', 1500);
-    }
+// Render customer list - uses innerHTML only when structure changes
+let _custHash="";
+function renderCustomers(){
+  const hash=G.customers.map(c=>c.id+":"+Math.floor(c.patience)).join("|");
+  if(hash===_custHash)return;
+  _custHash=hash;
 
-    /* ===== CUSTOMERS ===== */
-    function spawnCustomer() {
-      const max = getMaxCustomers();
-      if(GAME.customers.length >= max) return;
-      const order = generateOrder();
-      const patience = getMaxPatience();
-      const c = {
-        id: Date.now()+Math.random(),
-        avatar: AVATARS[rand(0, AVATARS.length-1)],
-        order: order,
-        patience: patience,
-        maxPatience: patience,
-        created: performance.now()
-      };
-      GAME.customers.push(c);
-      renderCustomers();
-    }
+  if(!G.customers.length){
+    DOM.customerList.innerHTML=`<div class="empty-queue">🕐 Müşteriler yolda...</div>`;
+    return;
+  }
 
-    function generateOrder() {
-      const base = ['ekmek','et'];
-      const extras = GAME.unlockedIngredients.filter(i => !base.includes(i));
-      const count = extras.length ? rand(0, Math.min(3, extras.length)) : 0;
-      const order = [...base];
-      // Her seferinde rastgele ekle, tekrar olabilir? Hayır, malzeme bir kez      const pool = extras.slice().sort(()=>Math.random()-.5);
-      for(let i=0;i<count;i++) order.push(pool[i]);
-      return order;
-    }
+  // Build HTML
+  let html="";
+  G.customers.forEach((c,idx)=>{
+    const pct=Math.max(0,c.patience/c.maxPatience*100);
+    const cls=pct>55?"high":pct>25?"mid":"low";
+    const orderHTML=c.order.map(id=>{
+      const i=ing(id);
+      return `<span class="mini-ing" title="${i.name}">${i.icon}</span>`;
+    }).join("");
 
-    function renderCustomers() {
-      els.customerList.innerHTML = '';
-      if(!GAME.customers.length) {
-        els.customerList.innerHTML = '<div style="color:#636e72; font-weight:700; text-align:center; padding:20px;">Henüz müşteri yok...</div>';
-        return;
+    html+=`<div class="customer-card ${c.type}${idx===0?" active":""}">
+      <div class="c-header">
+        <div class="c-avatar">${c.avatar}</div>
+        <div class="c-info">
+          <div class="c-name">${idx===0?"➤ ":""}${c.name}</div>
+          <div class="c-type">${c.typeLabel}</div>
+        </div>
+        <div class="c-price">${fmt(c.price)}</div>
+      </div>
+      <div class="c-order">${orderHTML}</div>
+      <div class="c-note">${c.note}</div>
+      <div class="patience-bar"><div class="patience-fill ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+  DOM.customerList.innerHTML=html;
+}
+
+function renderBurger(){
+  const preview=DOM.burgerPreview;
+  // Keep plate-shadow, rebuild layers
+  let html='<div class="plate-shadow"></div>';
+
+  if(!G.burger.length){
+    preview.classList.add("empty-plate");
+  } else {
+    preview.classList.remove("empty-plate");
+    G.burger.forEach((item,idx)=>{
+      const i=ing(item.id);
+      let cls=`layer ${i.type}`;
+      if(i.sauceClass) cls+=` ${i.sauceClass}`;
+      if(i.premiumClass) cls+=` ${i.premiumClass}`;
+
+      let cookBadge="";
+      if(item.cooked!==null){
+        const q=item.cooked;
+        const bc=q>=85?"perfect":q>=65?"good":"bad";
+        const sym=q>=85?"✓":q>=65?"~":"!";
+        cookBadge=`<span class="cook-badge ${bc}">${sym}</span>`;
       }
-      GAME.customers.forEach((c, idx) => {
-        const pct = Math.max(0, (c.patience/c.maxPatience)*100);
-        let color = '#00b894';
-        if(pct < 30) color = '#d63031';
-        else if(pct < 60) color = '#fdcb6e';
 
-        const div = document.createElement('div');
-        div.className = 'customer' + (c.patience <= 0 ? ' leaving':'');
-        div.innerHTML = `
-          <div class="customer-header">
-            <div class="customer-avatar">${c.avatar}</div>
-            <div class="customer-name">Müşteri #${idx+1}</div>
-          </div>
-          <div class="customer-want">
-            İstediği: ${c.order.map(id => {
-              const ing = INGREDIENTS.find(x=>x.id===id);
-              return `<span class="em">${ing?ing.emoji:'?'}</span>`;
-            }).join('')}
-          </div>
-          <div class="patience-track">
-            <div class="patience-fill" style="width:${pct}%; background:${color};"></div>
-          </div>
-        `;
-        els.customerList.appendChild(div);
-      });
+      const mt=idx===0?"0px":"-6px";
+      html+=`<div class="${cls}" style="--lw:${i.w}px;--lh:${i.h}px;--lbg:${i.bg};--lmt:${mt};${i.r?`--lr:${i.r}`:'--lr:999px'};animation-delay:${idx*.04}s">${cookBadge}</div>`;
+    });
+  }
+
+  preview.innerHTML=html;
+
+  const val=G.burger.reduce((s,x)=>s+ing(x.id).price,0);
+  DOM.burgerVal.textContent=fmt(val);
+  DOM.btnUndo.disabled=!G.burger.length;
+  DOM.btnServe.disabled=!G.customers.length||!G.burger.length||G.paused||G.dayEnded;
+  DOM.btnAuto.disabled=!G.upgrades.assistant||!G.customers.length||G.paused||G.dayEnded;
+}
+
+function renderQuality(){
+  const target=G.customers[0];
+  if(!target){
+    DOM.focusOrder.innerHTML=`<span class="badge">Sipariş bekleniyor</span>`;
+    DOM.targetPrice.textContent="0₺";
+    DOM.qualityFill.style.width="0%";
+    DOM.qualityText.textContent="0%";
+    return;
+  }
+  DOM.focusOrder.innerHTML=target.order.map(id=>{
+    const i=ing(id);
+    return `<span class="mini-ing" title="${i.name}">${i.icon}</span>`;
+  }).join("");
+  DOM.targetPrice.textContent=fmt(target.price);
+
+  const score=G.burger.length?scoreOrder(target.order,G.burger.map(x=>x.id)):0;
+  DOM.qualityFill.style.width=`${score}%`;
+  DOM.qualityText.textContent=`${score}%`;
+}
+
+function renderIngredients(){
+  let html="";
+  INGREDIENTS.forEach(i=>{
+    const locked=!G.unlocked.includes(i.id);
+    const lvlLock=locked&&G.level<(i.level||1);
+    const dis=locked||G.paused||G.dayEnded;
+    html+=`<button class="ing-btn${locked?" locked":""}" ${dis?"disabled":""} data-ing="${i.id}">
+      <span class="emoji">${locked?"🔒":i.icon}</span>
+      <span class="iname">${i.name}${locked&&!lvlLock?`<br>${fmt(i.unlockCost)}`:""}</span>
+    </button>`;
+  });
+  DOM.ingGrid.innerHTML=html;
+
+  // Attach events
+  DOM.ingGrid.querySelectorAll(".ing-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id=btn.dataset.ing;
+      if(G.unlocked.includes(id)) addIng(id);
+    });
+  });
+}
+
+function renderShop(){
+  let html="";
+
+  if(activeTab==="upgrades"){
+    for(let key in UPGRADES){
+      const up=UPGRADES[key],lv=G.upgrades[key];
+      const maxed=lv>=up.costs.length;
+      const cost=maxed?0:up.costs[lv];
+      const canBuy=!maxed&&G.money>=cost;
+      const effectText=getUpgradeEffect(key,lv);
+      html+=`<div class="shop-card">
+        <header><h3>${up.icon} ${up.name}</h3><span class="badge">Sv.${lv}/${up.costs.length}</span></header>
+        <p>${up.desc}<br><em style="color:var(--mint);font-size:10px">${effectText}</em></p>
+        <div class="shop-action">
+          <span class="price-tag">${maxed?"MAKS":fmt(cost)}</span>
+          <button class="buy-btn" ${maxed||!canBuy?"disabled":""} data-up="${key}">${maxed?"✅":"⬆️ Geliştir"}</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  if(activeTab==="menu"){
+    INGREDIENTS.filter(i=>!i.unlocked).forEach(i=>{
+      const owned=G.unlocked.includes(i.id);
+      const lvlLock=!owned&&G.level<(i.level||1);
+      html+=`<div class="shop-card">
+        <header><h3>${i.icon} ${i.name}</h3><span class="badge">${owned?"✅ Açık":`Sv.${i.level||1}`}</span></header>
+        <p>${owned?"Menüde aktif.":lvlLock?`Seviye ${i.level} gerekli.`:"Menüne ekle, daha fazla kazanç!"}</p>
+        <div class="shop-action">
+          <span class="price-tag">${owned?"—":fmt(i.unlockCost)}</span>
+          <button class="buy-btn" ${owned||lvlLock||G.money<i.unlockCost?"disabled":""} data-uning="${i.id}">${owned?"Açık":"🔓 Aç"}</button>
+        </div>
+      </div>`;
+    });
+    if(!html) html=`<div class="empty-queue">Tüm malzemeler açıldı! 🎉</div>`;
+  }
+
+  if(activeTab==="missions"){
+    MISSIONS.forEach(m=>{
+      const done=G.claimed.includes(m.id);
+      let val;
+      if(m.field==="_unlockCount") val=G.unlocked.length;
+      else val=G[m.field]||0;
+      const pct=Math.min(100,val/m.target*100);
+      html+=`<div class="mission-card">
+        <div class="mission-top"><span>${done?"✅":"🎯"} ${m.title}</span><span>${Math.min(val,m.target)}/${m.target}</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="mission-reward">Ödül: ${fmt(m.reward)} ${done?"(alındı)":"(otomatik)"}</div>
+      </div>`;
+    });
+  }
+
+  if(activeTab==="log"){
+    html=`<div class="log-wrap">${G.log.slice(0,40).map(l=>`<div class="log-entry">${l}</div>`).join("")}</div>`;
+  }
+
+  DOM.shopContent.innerHTML=html;
+
+  // Attach upgrade buttons
+  DOM.shopContent.querySelectorAll("[data-up]").forEach(btn=>{
+    btn.addEventListener("click",()=>buyUpgrade(btn.dataset.up));
+  });
+  DOM.shopContent.querySelectorAll("[data-uning]").forEach(btn=>{
+    btn.addEventListener("click",()=>unlockIng(btn.dataset.uning));
+  });
+}
+
+function getUpgradeEffect(key,lv){
+  switch(key){
+    case"grill":return`Pişirme kalitesi: +${lv*6.5}%`;
+    case"patience":return`Sabır: +${(lv*13)}%`;
+    case"marketing":return`Müşteri hızı: ${Math.round((1-Math.pow(.84,lv))*100)}% artış`;
+    case"capacity":return`Max müşteri: ${3+lv}`;
+    case"assistant":return lv?`Usta ücreti: ${Math.max(5,28-lv*6)}₺`:"Henüz açılmadı";
+    case"accountant":return`Pasif gelir: ${lv*(2+G.level)}₺/s`;
+    default:return"";
+  }
+}
+
+function fullRender(){
+  updateHeader();renderCustomers();renderBurger();
+  renderQuality();renderIngredients();renderShop();
+}
+
+// ===== GAME LOOP =====
+function gameLoop(now){
+  const dt=Math.min(now-lastTick,200);
+  lastTick=now;
+
+  if(!G.paused&&!G.dayEnded){
+    // Day timer
+    G.dayTime-=dt/1000;
+    if(G.dayTime<=0){endDay();requestAnimationFrame(gameLoop);return}
+
+    // Customer patience decay
+    const decayRate=dt/1000*(5.5-Math.min(2.2,G.upgrades.patience*.3));
+    for(let i=G.customers.length-1;i>=0;i--){
+      G.customers[i].patience-=decayRate;
+      if(G.customers[i].patience<=0) missCustomer(i);
     }
 
-    /* ===== BURGER ASSEMBLY ===== */
-    function renderIngredientButtons() {
-      els.ingredientButtons.innerHTML = '';
-      INGREDIENTS.forEach(ing => {
-        const locked = !GAME.unlockedIngredients.includes(ing.id);
-        const btn = document.createElement('button');
-        btn.className = 'ing-btn' + (locked?' locked':'');
-        btn.innerHTML = `<div>${ing.emoji}</div><div class="name">${ing.name}</div>`;
-        if(!locked) {
-          btn.onclick = () => addIngredient(ing.id);
-        } else {
-          btn.title = 'Kilitli';
- }
-        els.ingredientButtons.appendChild(btn);
-      });
+    // Spawn timer
+    spawnTimer+=dt;
+    if(spawnTimer>=spawnInterval()){
+      spawnTimer=0;
+      spawnCustomer();
     }
 
-    function addIngredient(id) {
-      if(!GAME.unlockedIngredients.includes(id)) return;
-      if(GAME.customers.length === 0) {
-        showNotification('Önce müşteri gelmeli!', false);
-        return;
-      }
-      GAME.currentBurger.push(id);
-      renderBurgerStack();
+    // Passive income (every second)
+    passiveTimer+=dt;
+    if(passiveTimer>=1000){
+      passiveTimer-=1000;
+      passiveIncome();
     }
+  }
 
-    function renderBurgerStack() {
-      els.burgerStack.innerHTML = '';
-      if(GAME.currentBurger.length === 0) {
-        els.burgerStack.innerHTML = '<div class="empty-msg">Malzeme ekle...</div>';
-        els.serveBtn.disabled = true;
-        return;
-      }
-      GAME.currentBurger.forEach(id => {
-        const ing = INGREDIENTS.find(x=>x.id===id);
-        const div = document.createElement('div');
-        div.className = 'stack-item';
-        div.textContent = ing?ing.emoji:'?';
-        els.burgerStack.appendChild(div);
-      });
-      els.serveBtn.disabled = false;
-    }
+  // Render throttle (every ~150ms for smooth patience bars)
+  renderTimer+=dt;
+  if(renderTimer>=150){
+    renderTimer=0;
+    updateHeader();
+    renderCustomers();
+    // Only update quality and buttons occasionally
+    renderQuality();
+    DOM.btnServe.disabled=!G.customers.length||!G.burger.length||G.paused||G.dayEnded;
+    DOM.btnAuto.disabled=!G.upgrades.assistant||!G.customers.length||G.paused||G.dayEnded;
+  }
 
-    function clearBurger() {
-      GAME.currentBurger = [];
-      renderBurgerStack();
-    }
+  // Auto save (every 15 seconds)
+  saveTimer+=dt;
+  if(saveTimer>=15000){
+    saveTimer=0;
+    saveGame();
+  }
 
-    function serveBurger() {
-      if(!GAME.customers.length || !GAME.currentBurger.length) return;
+  requestAnimationFrame(gameLoop);
+}
 
-      const target = GAME.customers[0];
-      const correct = isOrderCorrect(target.order, GAME.currentBurger);
+// ===== EVENT LISTENERS =====
+DOM.btnServe.addEventListener("click",serveBurger);
+DOM.btnUndo.addEventListener("click",undoIng);
+DOM.btnClear.addEventListener("click",clearBurger);
+DOM.btnAuto.addEventListener("click",autoBuild);
+DOM.btnPause.addEventListener("click",()=>{
+  G.paused=!G.paused;
+  toast(G.paused?"⏸ Duraklatıldı":"▶️ Devam ediyor",G.paused?"info":"good");
+  updateHeader();
+});
+DOM.btnNextDay.addEventListener("click",nextDay);
+DOM.btnModalNext.addEventListener("click",nextDay);
+$("btnSave").addEventListener("click",()=>{saveGame();toast("💾 Kaydedildi!","good")});
+$("btnReset").addEventListener("click",resetGame);
 
-      // Price calculation
-      const basePrice = 15;
-      const extras = Math.max(0, target.order.length - 2);
-      const totalPrice = basePrice + extras*5;
+// Tabs
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    activeTab=btn.dataset.tab;
+    renderShop();
+  });
+});
 
-      let earned = 0;
-      if(correct) {
-        earned = totalPrice;
-        showNotification(`+${earned}₺ Doğru sipariş!`, true);
-        GAME.burgersMade++;
-        checkLevelUp();
-      } else {
-        earned = Math.floor(totalPrice/2);
-        showNotification(`+${earned}₺ Yanlış sipariş (yarı fiyat)`, false);
-        GAME.burgersMade++;
-        checkLevelUp();
-      }
+// ===== INIT =====
+fullRender();
 
-      GAME.money += earned;
-      GAME.totalEarned += earned;
+// Spawn first customer quickly
+setTimeout(()=>{if(!G.dayEnded)spawnCustomer()},400);
 
-      // Remove customer and clear plate
-      GAME.customers.shift();
-      GAME.currentBurger = [];
-      renderBurgerStack();
-      renderCustomers();
-      updateUI();
-    }
+// Start game loop
+lastTick=performance.now();
+requestAnimationFrame(gameLoop);
 
-    function isOrderCorrect(order, burger) {
-      if(order.length !== burger.length) return false;
-      const a = [...order].sort();
-      const b = [...burger].sort();
-      return a.every((v,i) => v===b[i]);
-    }
-
-    /* ===== LEVEL SYSTEM ===== */
-    function checkLevelUp() {
-      const newLevel = Math.floor(GAME.burgersMade / 10) + 1;
-      if(newLevel > GAME.level) {
-        GAME.level = newLevel;
-        const bonus = newLevel * 20;
-        GAME.money += bonus;
-        GAME.totalEarned += bonus;
-        showLevelFlash(newLevel, bonus);
-        renderIngredientShop(); // unlock new ingredients potentially
-        renderIngredientButtons();
-      }
-    }
-
-    function showLevelFlash(lv, bonus) {
-      els.levelText.textContent = `Seviye ${lv} oldun! (${bonus}₺ bonus)`;
-      els.levelFlash.classList.add('active');
-      setTimeout(()=> els.levelFlash.classList.remove('active'), 2000);
-      updateUI();
-    }
-
-    /* ===== SHOP / UPGRADES ===== */
-    function renderIngredientShop() {
-      els.ingredientShop.innerHTML = '';
-      INGREDIENTS.forEach(ing => {
-        if(GAME.unlockedIngredients.includes(ing.id)) return;
-        const div = document.createElement('div');
-        div.className = 'upgrade-group';
-        const lockedByLevel = GAME.level < ing.levelReq;
-        div.innerHTML = `
-          <div class="upgrade-title">${ing.emoji} ${ing.name}</div>
-          <div class="upgrade-desc">${lockedByLevel ? `Seviye ${ing.levelReq} gerekli` : `Burgerlere ${ing.name.toLowerCase()} ekle!`}</div>
-          <div class="upgrade-row">
-            <div class="upgrade-cost">${ing.unlockCost}₺</div>
-            <button class="btn-shop" ${GAME.money < ing.unlockCost || lockedByLevel ? 'disabled':''} onclick="unlockIngredient('${ing.id}')">
- ${lockedByLevel ? 'Kilitli' : 'Aç'}
-            </button>
-          </div>
-        `;
-        els.ingredientShop.appendChild(div);
-      });
-      if(!els.ingredientShop.children.length) {
-        els.ingredientShop.innerHTML = '<div style="color:#636e72; font-size:13px;">Tüm malzemeler açık!</div>';
-      }
-    }
-
-    window.unlockIngredient = function(id) {
-      const ing = INGREDIENTS.find(x=>x.id===id);
-      if(!ing || GAME.unlockedIngredients.includes(id)) return;
-      if(GAME.money < ing.unlockCost) return;
-      if(GAME.level < ing.levelReq) return;
-      GAME.money -= ing.unlockCost;
-      GAME.unlockedIngredients.push(id);
-      showNotification(`${ing.name} açıldı!`, true);
-      renderIngredientShop();
-      renderIngredientButtons();
-      updateUI();
-    };
-
-    window.buyUpgrade = function(type) {
-      const current = GAME.upgrades[type];
-      const costs = UPGRADE_COSTS[type];
-      if(current >= costs.length) return;
-      const cost = costs[current];
-      if(GAME.money < cost) {
-        showNotification('Yeterli para yok!', false);
-        return;
-      }
-      GAME.money -= cost;
-      GAME.upgrades[type]++;
-      showNotification('Geliştirme satın alındı!', true);
-      updateShopUI();
-      updateUI();
-    };
-
-    function updateShopUI() {
-      const set = (type, label, maxLevel) => {
-        const cur = GAME.upgrades[type];
-        const maxed = cur >= maxLevel;
-        const cost = maxed ? 'MAX' : UPGRADE_COSTS[type][cur] + '₺';
-        const btn = document.getElementById('buy-'+type.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()));
-        const costEl = document.getElementById('cost-'+type.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()));
-        const lvlEl = document.getElementById('lvl-'+type.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()));
-        if(costEl) costEl.textContent = cost;
-        if(lvlEl) lvlEl.textContent = 'Seviye ' + cur;
-        if(btn) {
-          btn.disabled = maxed || GAME.money < (UPGRADE_COSTS[type][cur]||Infinity);
-          if(maxed) { btn.textContent = 'MAX'; }
-        }
-      };
-      set('fastHands','hands', UPGRADE_COSTS.fastHands.length);
-      set('ad','ad', UPGRADE_COSTS.ad.length);
-      set('autoCashier','auto', UPGRADE_COSTS.autoCashier.length);
-      set('shopSize','shop', UPGRADE_COSTS.shopSize.length);
-
- // ingredient shop buttons update
-      renderIngredientShop();
-    }
-
-    function autoCashierTick() {
-      const inc = AUTO_INCOME[Math.min(GAME.upgrades.autoCashier, AUTO_INCOME.length-1)];
-      if(inc > 0) {
-        GAME.money += inc;
-        GAME.totalEarned += inc;
-        updateUI();
-      }
-    }
-
-    /* ===== GAME LOOP ===== */
-    function gameLoop(now) {
-      if(!GAME.gameActive) return;
-      const dt = now - GAME.lastTick;
-      if(dt > 100) {
-        // update patience every ~100ms
-        const decay = 1.2 * (dt/100); // base patience decay        const decayMult = 1 - (0.06 * GAME.upgrades.fastHands); // max60% slower at lvl10? Actually 0.06*10=0.6        let removed = false;
-        for(let i=GAME.customers.length-1;i>=0;i--) {
-          GAME.customers[i].patience -= decay * Math.max(0.4, 1 - GAME.upgrades.fastHands*0.08);
-          if(GAME.customers[i].patience <= 0) {
- GAME.customers.splice(i,1);
-            GAME.missedCustomers++;
-            removed = true;
- }
-        }
-        if(removed) renderCustomers();
-
- // spawn logic
-        if(now - GAME.lastSpawn > getSpawnInterval()) {
-          spawnCustomer();
-          GAME.lastSpawn = now;
-        }
-
-        GAME.lastTick = now;
-      }
-      updateShopUI();
-      requestAnimationFrame(gameLoop);
-    }
-
-    /* ===== UI HELPERS ===== */
-    function updateUI() {
-      els.money.textContent = GAME.money.toLocaleString('tr-TR');
-      els.level.textContent = GAME.level;
-      els.burgers.textContent = GAME.burgersMade;
-      els.missed.textContent = GAME.missedCustomers;
-      els.earned.textContent = GAME.totalEarned.toLocaleString('tr-TR');
-      els.serveBtn.disabled = !GAME.customers.length || !GAME.currentBurger.length;
-    }
-
-    /* ===== EVENT LISTENERS ===== */
-    els.serveBtn.addEventListener('click', serveBurger);
-    els.clearBtn.addEventListener('click', clearBurger);
-
-    // Start
-    init();
-  </script>
+// Save on exit
+window.addEventListener("beforeunload",saveGame);
+</script>
 </body>
 </html>
